@@ -1,0 +1,14 @@
+base
+knitr
+limma
+tmod
+pca3d
+Rcpp
+tagcloud
+BiocGenerics
+Biobase
+GenomeInfoDb
+AnnotationDbi
+DBI
+RSQLite
+org.Hs.eg.db
