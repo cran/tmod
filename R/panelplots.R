@@ -333,6 +333,8 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
 #' @param legend.style Style of the legend: "auto" -- automatic; "broad":
 #' pval legend side by side with effect size legend; "tall": effect size
 #' legend above pval legend; "none" -- no legend.
+#' @import grDevices
+#' @import graphics
 #' @export
 pvalEffectPlot <- function(e, p, 
   pval.thr=0.01, pval.cutoff=1e-6,
@@ -346,7 +348,7 @@ pvalEffectPlot <- function(e, p,
    
   # ---------------------------------------
   # initializations
-  me <- e ; mq <- p
+  me <- e ; mq <- -log10(p)
 
   grid <- match.arg(grid, c("none", "at", "between"))
 
@@ -382,7 +384,8 @@ pvalEffectPlot <- function(e, p,
   # ---------------------------------------
   # plotting
   plot.new()
-  par(mar=rep(1,4), usr=c(0,1,0,1))
+  oldpar <- par(mar=rep(1,4), usr=c(0,1,0,1))
+  on.exit(par(oldpar))
 
   # ---------------------------------------
   # calculate plotting parameters
@@ -477,7 +480,9 @@ pvalEffectPlot <- function(e, p,
   palfunc <- .getColFunc(pmin2, max(mq), "red")
   col <- palfunc(mq)
 
-  ev  <- (me - min(me))/(max(me)-min(me))
+  dme <- max(me) - min(me)
+  if(dme == 0) dme <- 1
+  ev  <- (me - min(me))/dme
 
   xc <- x.vec[col(me)]
   yc <- rev(y.vec)[row(me)]
@@ -530,9 +535,10 @@ pvalEffectPlot <- function(e, p,
 #' @param clust whether, in the resulting data frame, the modules should be
 #' ordered by clustering them with either q-values ("qval") or the effect size
 #' ("effect"). If NULL, the modules are sorted alphabetically by their ID.
-#' @param filter.empty.cols If TRUE, all elements (columns) with no significant enrichment in any row will be removed
-#' @param filter.empty.rows If TRUE, all modules (rows) with no significant enrichment in any column will be removed
+#' @param filter.empty.cols If TRUE, all elements (columns) with no enrichment below pval.thr in any row will be removed
+#' @param filter.empty.rows If TRUE, all modules (rows) with no enrichment below pval.thr in any column will be removed
 #' @param filter.unknown If TRUE, modules with no annotation will be omitted
+#' @param filter.rows.pval Rows in which no p value is below this threshold will be omitted
 #' @param filter.by.id if provided, show only modules with IDs in this character vector
 #' @param pval.thr Results with p-value above pval.thr will not be shown
 #' @param col.labels Labels for the columns. If NULL, names of the elements
@@ -573,6 +579,7 @@ pvalEffectPlot <- function(e, p,
 #' @export
 tmodPanelPlot <- function(x, pie=NULL, clust="qval", 
   filter.empty.cols=FALSE, filter.empty.rows=TRUE, filter.unknown=TRUE,
+  filter.rows.pval=0.05,
   filter.by.id=NULL,
   col.labels=NULL, row.labels=NULL, 
   pval.thr=10^-2,
@@ -583,7 +590,7 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   pie.style="pie", col.labels.style="top",
   legend.style="auto", ... ) {
 
-  if(!is(x, "list")) stop( "x must be a list object")
+  x <- .xcheck(x)
 
   # check whether the pie object is correct
   if(!is.null(pie)) pie <- .piecheck(pie, x)
@@ -623,6 +630,15 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   # ----- FILTERING ------------
   row.ids <- df$ID
 
+  # remove rows with no pval below filter.rows.pval
+  minps <- apply(mq, 1, max)
+  sel   <- minps > -log10(filter.rows.pval)
+  mq    <- mq[sel,,drop=F]
+  me    <- me[sel,,drop=F]
+  row.labels <- row.labels[sel]
+  row.ids    <- row.ids[sel]
+
+
   # remove rows w/o a significant p-value
   if(filter.empty.rows) {
     minps <- apply(mq, 1, max)
@@ -649,7 +665,7 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   }
 
   # make the actual plot
-  pvalEffectPlot(me, mq, 
+  pvalEffectPlot(me, 10^-mq, 
     row.labels=row.labels, col.labels=col.labels, pval.thr=pval.thr,
     grid=grid, plot.cex=plot.cex, text.cex=text.cex, 
     plot.func=plot.func, legend.style=legend.style, col.labels.style=col.labels.style,
@@ -713,10 +729,39 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
 ## check whether the "pie" argument is correct
 .piecheck <- function(pie, x) {
 
-  if(length(pie) != length(x)) {
-    stop("Number of conditions in pie does not equal number of conditions in x")
+
+  if(is.null(names(pie))) {
+    warning("No names in pie, generating default names")
+    names(pie) <- paste0("X.", 1:length(pie))
   }
 
-  pie <- lapply(pie, as.matrix)
+  if(! all(names(x) %in% names(pie))) 
+    stop("All named elements of x must be found in pie")
+
+  pie <- pie[names(x)]
+
+  pie <- sapply(pie, as.matrix, simplify=FALSE)
   pie
+}
+
+
+## check whether the x argument is correct
+.xcheck <- function(x) {
+  if(!is(x, "list")) stop( "x must be a list object")
+
+  z <- sapply(x, is.data.frame)
+  if(any(!z)) {
+    warning(sprintf("Some elements of x are not data frames, removing %d", sum(!z)))
+    x <- x[ z ]
+  }
+
+  if(length(x) < 1)
+    stop("No usable elements of x")
+
+  if(is.null(names(x))) {
+    warning("No names in x, generating default names")
+    names(x) <- paste0("X.", 1:length(x))
+  }
+
+  x
 }

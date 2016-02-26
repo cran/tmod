@@ -16,8 +16,15 @@
   msig$MODULES <- t(sapply(foo,
     function(x) x[ c("SYSTEMATIC_NAME", "STANDARD_NAME", "CATEGORY_CODE", "SUB_CATEGORY_CODE") ]))
   colnames(msig$MODULES) <- c( "ID", "Title", "Category", "Subcategory" )
-  rownames(msig$MODULES) <- msig$MODULES[,"ID"]
   msig$MODULES <- data.frame(msig$MODULES, stringsAsFactors=FALSE)
+
+  if(any(duplicated(msig$MODULES$ID))) {
+    warning("Duplicated IDs found; automatic IDs will be generated")
+    msig$MODULES$oldID <- msig$MODULES$ID
+    msig$MODULES$ID    <- make.unique(as.character(msig$MODULES$ID))
+  }
+
+  rownames(msig$MODULES) <- msig$MODULES[,"ID"]
 
   msig$MODULES2GENES <- lapply(foo, function(x) strsplit( x["MEMBERS_SYMBOLIZED"], "," )[[1]])
   names(msig$MODULES2GENES) <- msig$MODULES$ID
@@ -36,12 +43,20 @@
   lines <- readLines(con)
   close(con)
 
-  ids <- gsub( "\t.*", "", lines)
-  desc <- gsub( "^[^\t]*\t([^\t]*)\t.*", "\\1", lines )
+  ids   <- gsub( "\t.*", "", lines)
+  desc  <- gsub( "^[^\t]*\t([^\t]*)\t.*", "\\1", lines )
   genes <- gsub( "^[^\t]*\t[^\t]*\t(.*)", "\\1", lines )
 
   msig$MODULES <- data.frame(
     ID=ids, Title=desc, stringsAsFactors=FALSE)
+  if(any(duplicated(msig$MODULES$ID))) {
+    warning("Duplicated IDs found; automatic IDs will be generated")
+    msig$MODULES$oldID <- msig$MODULES$ID
+    msig$MODULES$ID    <- make.unique(as.character(msig$MODULES$ID))
+  }
+
+  rownames(msig$MODULES) <- msig$MODULES[,"ID"]
+
   msig$MODULES2GENES <- strsplit(genes, "\t")
   names(msig$MODULES2GENES) <- ids
 
@@ -61,7 +76,7 @@
 #' contains less information).
 #' @param file The name of the file to parse
 #' @param format Format (either "xml" or "gmt")
-#' @param organism Select the organism to use. Use "all" for all organisms in the file (only for "xml" format)
+#' @param organism Select the organism to use. Use "all" for all organisms in the file (only for "xml" format; default: "Homo sapiens")
 #' @param fields Which fields to import to the MODULES data frame (only for "xml" format)
 #' @importFrom XML xmlParse xmlToList
 #' @examples

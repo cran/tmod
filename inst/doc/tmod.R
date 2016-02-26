@@ -1,8 +1,9 @@
-## ----setup, cache=FALSE, echo=FALSE, results="hide"----------------------
+## ----setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE-------
 library(knitr)
-opts_chunk$set(cache=FALSE, autodep=FALSE)
+opts_chunk$set(cache=FALSE, autodep=FALSE, tidy=FALSE)
+opts_knit$set(width=75)
 
-## ----twoA----------------------------------------------------------------
+## ----twoA, size="Huge"---------------------------------------------------
 library(limma)
 library(tmod)
 data(Egambia)
@@ -112,7 +113,7 @@ l    <- tt$GENE_SYMBOL
 res2 <- tmodUtest(l, mset="all")
 head( res2 )
 
-## ----six,fig=TRUE,fig.width=8,fig.height=4-------------------------------
+## ----six,fig=TRUE,fig.width=8,fig.height=5-------------------------------
 library(pca3d)
 mypal <- c("#E69F00", "#56B4E9")
 pca <- prcomp(t(E), scale.=TRUE)
@@ -156,41 +157,12 @@ pie <- tmodDecideTests(gs, lfc=pca$rotation[,1:10], lfc.thr=qqs)
 tmodPanelPlot(x[1:10], pie=pie, 
   pie.style="rug", grid="between")
 
-## ----eight,fig=TRUE,fig.width=10,fig.height=8,results="hide"-------------
+## ----eight,fig=TRUE,fig.width=6,fig.height=5,results="hide"--------------
 library(tagcloud)
 w <- -log10(res$P.Value)
 c <- smoothPalette(res$AUC, min=0.5)
 tags <- strmultline(res$Title)
 tagcloud(tags, weights=w, col=c)
-
-## ----nine,fig=TRUE,fig.width=8,fig.height=8,results="hide"---------------
-par(mar=c(1,1,1,1))
-o3 <- order(abs(pca$rotation[,3]), decreasing=TRUE)
-l3 <- Egambia$GENE_SYMBOL[o3]
-res3 <- tmodUtest(l3)
-layout(matrix(c(3,1,0,2),2,2,byrow=TRUE),
-  widths=c(0.3, 0.7), heights=c(0.7, 0.3))
-# note -- PC4 is now x axis!!
-l<-pca2d(pca, group=group, components=4:3,
-  palette=mypal)
-cols <- as.character(l$colors)
-legend("topleft", 
-  as.character(l$groups),
-  pch=l$shapes,
-  col=cols, bty="n")
-tagcloud(tags, weights=w, col=c, fvert= 0)
-tagcloud(strmultline(res3$Title),
-  weights=-log10(res3$P.Value),
-  col=smoothPalette(res3$AUC, min=0.5),
-  fvert=1)
-
-## ----nineB,fig=FALSE-----------------------------------------------------
-tmodPCA(pca, 
-  genes=Egambia$GENE_SYMBOL, 
-  components=3:4,
-  plot.params=list(group=group,
-  palette=mypal
-  ))
 
 ## ----perm1,fig=FALSE-----------------------------------------------------
 permset <- function(data, design) {
@@ -246,14 +218,13 @@ abline(h=0.01, col="grey")
 abline(v=0.01, col="grey")
 
 ## ----exmset--------------------------------------------------------------
-mymset <- new("tmod", list(
-  MODULES=data.frame(ID=c("A", "B"),
-                       Title=c("A title", 
-                                      "B title")),
-  GENES=data.frame(ID=c( "G1", "G2", "G3", "G4" )),
-  MODULES2GENES=list(
+mymset <- makeTmod(
+  modules=data.frame(ID=c("A", "B"),
+             Title=c("A title", 
+                      "B title")),
+  modules2genes=list(
     A=c("G1", "G2"),
-    B=c("G3", "G4")))
+    B=c("G3", "G4"))
 )
 mymset
 
@@ -289,43 +260,18 @@ mymset
 #  foo3 <- foo3[ ! sapply(foo3, is.null) ]
 
 ## ----msigdb4,eval=FALSE--------------------------------------------------
-#  msig <- list()
-#  
-#  msig$MODULES <- t(sapply(foo3,
+#  modules <- t(sapply(foo3,
 #    function(x)
 #      x[ c("SYSTEMATIC_NAME", "STANDARD_NAME", "CATEGORY_CODE", "SUBCATEGORY_CODE") ]))
-#  colnames(msig$MODULES) <- c( "ID", "Title", "Category", "Subcategory" )
-#  rownames(msig$MODULES) <- msig$MODULES[,"ID"]
-#  msig$MODULES <- data.frame(msig$MODULES, stringsAsFactors=FALSE)
+#  colnames(modules) <- c( "ID", "Title", "Category", "Subcategory" )
+#  modules <- data.frame(modules, stringsAsFactors=FALSE)
 
 ## ----msigdb5,eval=FALSE--------------------------------------------------
-#  msig$MODULES2GENES <- lapply(foo3,
+#  m2g <- lapply(foo3,
 #    function(x) strsplit( x["MEMBERS_SYMBOLIZED"], "," )[[1]])
-#  names(msig$MODULES2GENES) <- msig$MODULES$ID
+#  names(m2g) <- modules$ID
 #  
-#  msig$GENES <- data.frame( ID=unique(unlist(msig$MODULES2GENES)))
-#  msig <- new("tmod", msig)
-
-## ----wpex1, cache=TRUE---------------------------------------------------
-human <- tempfile()
-download.file( 
-  "http://www.wikipathways.org//wpi/batchDownload.php?species=Homo%20sapiens&fileType=txt", 
-  destfile=human, mode="wb")
-files <- unzip(human, list=T)
-
-files$ID    <- gsub( ".*_(WP[0-9]*)_.*", "\\1", files$Name )
-files$Title <- gsub( "(.*)_WP[0-9]*_.*", "\\1", files$Name )
-
-## ----wpex2, cache=TRUE---------------------------------------------------
-suppressMessages(library(org.Hs.eg.db))
-p2GENES <- sapply( files$Name, function(fn) {
-  foo <- read.csv( unz( human, 
-  filename= fn ), sep="\t" )
-  ids <- foo$Identifier[ foo$Identifier %in% ls( org.Hs.egSYMBOL ) ]
-  unique(unlist(mget(as.character(ids), org.Hs.egSYMBOL)))
-})
-
-names(p2GENES) <- files$ID
+#  msig <- makeTmod(modules=modules, modules2genes=m2g)
 
 ## ----wpex3---------------------------------------------------------------
 pathways <- data.frame( ID=files$ID, 
@@ -340,13 +286,7 @@ pathways <- pathways[ sel, ]
 rownames(pathways) <- pathways$ID
 
 ## ----wpex4---------------------------------------------------------------
-GENES <- data.frame( ID=unique(unlist(p2GENES)), 
-  stringsAsFactors=FALSE)
-
-Hspaths <- list( MODULES=pathways, 
-      MODULES2GENES=p2GENES, 
-      GENES=GENES )
-Hspaths <- new("tmod", Hspaths)
+Hspaths <- makeTmod(modules=pathways, modules2genes=p2GENES)
 
 ## ----wpex5---------------------------------------------------------------
 tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths)

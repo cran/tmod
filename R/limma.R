@@ -24,6 +24,7 @@
 #' a character vector with gene symbols
 #' @param order.by How the gene names should be ordered: "msd" (default), "pval" or "lfc"
 #' @param tmodFunc The function to run the enrichment tests. Either tmodCERNOtest or tmodUtest
+#' @param coef If not NULL, only run tmod on these coefficients
 #' @param ... Further parameters passed to the tmod test function
 #' @examples
 #' library(limma)
@@ -39,6 +40,7 @@ tmodLimmaTest <- function(f,
   genes,
   order.by="msd",
   tmodFunc=tmodCERNOtest,
+  coef=NULL,
   ...
 ) {
 
@@ -46,10 +48,15 @@ tmodLimmaTest <- function(f,
   .check.limma(f)
 
   N  <- ncol(f$coefficients)
-  cn <- colnames(f$coefficients)
+  cn <- coef
 
-  if(is.null(cn)) 
+  if(is.null(cn)) {
+    cn <- colnames(f$coefficients)
+  }
+
+  if(is.null(cn)) {
     cn <- 1:ncol(f$coefficients)
+  }
   
   gl <- genes
 
@@ -95,7 +102,7 @@ tmodLimmaTest <- function(f,
 #' fit object, including log fold changes, q-values, confidence intervals and
 #' MSD. For each coefficient, these four columns will be created in the
 #' output file, with the name consisting of a prefix indicating the type of
-#' the column ("msd.", "logFC", "qval", "ci.L", "ci.R") and the name of the
+#' the column ("msd", "logFC", "qval", "SE", "ci.L", "ci.R") and the name of the
 #' coefficient.
 #' @return A data frame with all genes.
 #' @param f result of linear model fit produced by limma functions lmFit and eBayes
@@ -138,12 +145,16 @@ tmodLimmaTopTable <- function(f, genelist=NULL, coef=NULL,
 
   for(c in cn) {
     ret[,paste0("logFC.", c)] <- f$coefficients[,c]
+    ret[,paste0("t.", c)]     <- f$t[,c]
     ret[,paste0("msd.", c)]   <- msdci$msd[,c]
+    ret[,paste0("SE.", c)]    <- msdci$se[,c]
+    ret[,paste0("d.", c)]     <- msdci$d[,c]
     ret[,paste0("ciL.", c)]   <- msdci$ci.l[,c]
     ret[,paste0("ciR.", c)]   <- msdci$ci.r[,c]
     ret[,paste0("qval.", c)]  <- pval[,c]
   }
 
+  rownames(ret) <- rownames(f)
   ret$placeholder <- NULL
   ret
 }
@@ -219,13 +230,25 @@ tmodLimmaDecideTests <- function(f, genes, lfc.thr=0.5, pval.thr=0.05,
 
   qq <- (1+confint)/2
 
+  # Bayes posterior standard deviation
+  s <- sqrt(f$s2.post)
+
   # this is from limma's toptable() function
-  margin.error <- sqrt(f$s2.post) * f$stdev.unscaled * qt(qq, df=f$df.total)
+  se  <- s * f$stdev.unscaled
+
+  # Cohen's d 
+  d   <- s * f$coefficients
+
+  margin.error <- se * qt(qq, df=f$df.total)
+
+  # "minimum significant difference"
   msd <- abs(f$coefficients) - margin.error
+  
+  # confidence intervals
   ci.l <- f$coefficients - margin.error
   ci.r <- f$coefficients + margin.error
 
-  list(msd=msd, ci.l=ci.l, ci.r=ci.r)
+  list(msd=msd, se=se, d=d, ci.l=ci.l, ci.r=ci.r)
 }
 
 .limma.msd <- function(f) {

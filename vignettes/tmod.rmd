@@ -2,29 +2,29 @@
 title: "tmod: Analysis of Transcriptional Modules"
 author: "January Weiner"
 date: "`r Sys.Date()`"
-output: 
-  pdf_document:
+output: pdf_document
 vignette: >
-  %\VignetteIndexEntry{Transcriptional Modules}
+  %\VignetteIndexEntry{Transcriptional Modules Enrichment Analysis}
   %\VignetteKeyword{tmod}
   %\VignetteKeyword{transcription}
   %\VignetteKeyword{gene expression}
-  %\VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::rmarkdown}
   %\SweaveUTF8
   \usepackage[utf8](inputenc)
 abstract: |
   The package `tmod` uses blood transcriptional modules described
   by Chaussabel et al. [-@chaussabel2008modular] and by Li et al.
-  [-@li2013molecular]. Furthermore, the package includes tools for testing
+  [-@li2014molecular]. Furthermore, the package includes tools for testing
   the significance of enrichment of the modules as well as visualisation of
   the genes and modules. This vignette is a tutorial for the package.
 toc: yes
 bibliography: bibliography.bib
 ---
 
-```{r setup, cache=FALSE, echo=FALSE, results="hide"}
+```{r setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE}
 library(knitr)
-opts_chunk$set(cache=FALSE, autodep=FALSE)
+opts_chunk$set(cache=FALSE, autodep=FALSE, tidy=FALSE)
+opts_knit$set(width=75)
 ```
 
 
@@ -42,8 +42,7 @@ with a differential gene expression analysis. Note that only a bit over
 5000 genes from the original set of over 45000 probes is included.
 
 
-<!--  --------------------------------------------------------------- -->
-```{r twoA}
+```{r twoA, size="Huge"}
 library(limma)
 library(tmod)
 data(Egambia)
@@ -55,7 +54,6 @@ tt <- topTable(fit, coef=2, number=Inf,
 
 head(tt, 10)
 ```
-<!--  --------------------------------------------------------------- -->
 
 
 OK, we see some of the genes known to be prominent in the human host
@@ -63,13 +61,11 @@ response to TB. We can display one of these using tmod's showGene
 function (it's just a boxplot combined with a beeswarm, nothing
 special):
 
-<!--  --------------------------------------------------------------- -->
 ```{r basic2, fig.width=4, fig.height=4}
 group <- rep( c("CTRL", "TB"), each=15)
 showGene(E["20799",], group,
   main=Egambia["20799", "GENE_SYMBOL"])
 ```
-<!--  -------------------------------------------------------------- -->
 
 Fine, but what about the modules?
 
@@ -103,7 +99,7 @@ res
 The columns in the above table contain the following:
 
  * **ID** The module ID. IDs starting with "LI" come from Li et al.
-[@li2013molecular], while IDs starting with "DC" have been defined by
+[@li2014molecular], while IDs starting with "DC" have been defined by
 Chaussabel et al. [@chaussabel2008modular].
  * **Title** The module description
  * **b** Number of genes from the given module in the fg set 
@@ -463,7 +459,7 @@ Using other sets of modules
 --------------------------------------------------------
 
 By default, tmod uses the modules published by Li et al.
-[@li2013molecular] (LI). A second set of modules was published by Chaussabel
+[@li2014molecular] (LI). A second set of modules was published by Chaussabel
 et al. [@chaussabel2008modular] (DC); new module definitions were described
 by Banchereau et al. [@banchereau2012host] and  can be found on a public
 website^[http://www.biir.net/public_wikis/module_annotation/G2_Trial_8_Modules].
@@ -501,7 +497,7 @@ principal component analysis (PCA), visualised using the pca3d package
 [@pca3d]:
 
 
-```{r six,fig=TRUE,fig.width=8,fig.height=4}
+```{r six,fig=TRUE,fig.width=8,fig.height=5}
 library(pca3d)
 mypal <- c("#E69F00", "#56B4E9")
 pca <- prcomp(t(E), scale.=TRUE)
@@ -619,7 +615,7 @@ while AUC -- which is a proxy for the effect size -- will be shown by the
 color of the tag, from grey (AUC=0.5, random) to black (1):
 
 
-```{r eight,fig=TRUE,fig.width=10,fig.height=8,results="hide"}
+```{r eight,fig=TRUE,fig.width=6,fig.height=5,results="hide"}
 library(tagcloud)
 w <- -log10(res$P.Value)
 c <- smoothPalette(res$AUC, min=0.5)
@@ -632,16 +628,16 @@ We can now annotate the PCA axes using the tag clouds; however, see below
 for a shortcut in tmod.
 
 
-```{r nine,fig=TRUE,fig.width=8,fig.height=8,results="hide"}
+```{r nine,fig=TRUE,fig.width=7,fig.height=7,results="hide",cache=TRUE}
 par(mar=c(1,1,1,1))
 o3 <- order(abs(pca$rotation[,3]), decreasing=TRUE)
 l3 <- Egambia$GENE_SYMBOL[o3]
 res3 <- tmodUtest(l3)
 layout(matrix(c(3,1,0,2),2,2,byrow=TRUE),
-  widths=c(0.3, 0.7), heights=c(0.7, 0.3))
+  widths=c(1/3, 2/3), heights=c(2/3, 1/3))
 # note -- PC4 is now x axis!!
 l<-pca2d(pca, group=group, components=4:3,
-  palette=mypal)
+  palette=mypal, radius=1.8)
 cols <- as.character(l$colors)
 legend("topleft", 
   as.character(l$groups),
@@ -660,7 +656,7 @@ quickly. Note that `plot.params` are just parameters which will be passed to
 the pca2d function.
 
 
-```{r nineB,fig=FALSE}
+```{r nineB,fig=FALSE,cache=TRUE,include=FALSE,results="hide"}
 tmodPCA(pca, 
   genes=Egambia$GENE_SYMBOL, 
   components=3:4,
@@ -810,18 +806,18 @@ with `data("tmod")`. The names mimick the various environments from
 Annotation.dbi packages, but currently the objects are just two lists and
 two data frames.
 
- * **tmod$MODULES** is a data frame which contains general module
+ * **tmod\$MODULES** is a data frame which contains general module
 information as defined in the supplementary materials for Li et al.
-[@li2013molecular] and Chaussabel et al. [@chaussabel2008modular]
- * **tmod$GENES** is a data frame which contains general gene information,
+[@li2014molecular] and Chaussabel et al. [@chaussabel2008modular]
+ * **tmod\$GENES** is a data frame which contains general gene information,
 including columns with HGNC ("primary"), as well as ENTREZ and REFSEQ
 identifiers.
- * **tmod$MODULES2GENES** is a list with module IDs (same as in the "ID"
+ * **tmod\$MODULES2GENES** is a list with module IDs (same as in the "ID"
 column of tmod$MODULES) as names. Every element of the list is a character
-vector with IDs ("primary" column of tmod$GENES) of the genes which are
+vector with IDs ("primary" column of tmod\$GENES) of the genes which are
 included in this module.
- * **tmod$GENES2MODULES** is a list with gene IDs (same as in the "primary"
-column of tmod$GENES) as names. Every element of the list is a character
+ * **tmod\$GENES2MODULES** is a list with gene IDs (same as in the "primary"
+column of tmod\$GENES) as names. Every element of the list is a character
 vector with IDs of the modules in which the gene is found.
 
 Using these variables, one can apply any other tool for the analysis of
@@ -884,27 +880,33 @@ question must have the following members:
 
  * **MODULES** A data frame which contains at least the columns "ID" and
 "Title". The IDs must correspond to the names of MODULES2GENES.
- * **GENES** A data frame which contains at least the column "ID". The gene IDs
+ * **GENES** (optional) A data frame which contains at least the column "ID". The gene IDs
 must correspond to the gene IDs used in MODULES2GENES.
  * **MODULES2GENES** A list. The names of the list are the IDs from the
 MODULES data frame. The items in the list are character vectors with names
 of the genes that are associated with each module.
+* **GENES2MODULES** (optional) A list with the reverse mapping from genes
+to modules. Names on that list must correspond to GENES\$ID, and the
+character vector members of the list must correspond to MODULES\$ID.
+
+tmod will accept a simple list that contains the above fields. However, the
+function makeTmod can be used conveniently to create a tmod object.
 
 Here is a minimal definition of such a set:
 
 ```{r exmset}
-mymset <- new("tmod", list(
-  MODULES=data.frame(ID=c("A", "B"),
-                       Title=c("A title", 
-                                      "B title")),
-  GENES=data.frame(ID=c( "G1", "G2", "G3", "G4" )),
-  MODULES2GENES=list(
+mymset <- makeTmod(
+  modules=data.frame(ID=c("A", "B"),
+             Title=c("A title", 
+                      "B title")),
+  modules2genes=list(
     A=c("G1", "G2"),
-    B=c("G3", "G4")))
+    B=c("G3", "G4"))
 )
 mymset
 ```
 
+Both GENES and GENES2MODULES will be automatically created by makeTmod.
 
 Whether the gene IDs are Entrez, or something else entirely does not
 matter, as long as they matched the provided input to the test functions.
@@ -1101,14 +1103,11 @@ subcategory:
 
 
 ```{r msigdb4,eval=FALSE}
-msig <- list()
-
-msig$MODULES <- t(sapply(foo3, 
+modules <- t(sapply(foo3, 
   function(x) 
     x[ c("SYSTEMATIC_NAME", "STANDARD_NAME", "CATEGORY_CODE", "SUBCATEGORY_CODE") ])) 
-colnames(msig$MODULES) <- c( "ID", "Title", "Category", "Subcategory" )
-rownames(msig$MODULES) <- msig$MODULES[,"ID"]
-msig$MODULES <- data.frame(msig$MODULES, stringsAsFactors=FALSE)
+colnames(modules) <- c( "ID", "Title", "Category", "Subcategory" )
+modules <- data.frame(modules, stringsAsFactors=FALSE)
 ```
 
 
@@ -1118,16 +1117,21 @@ list of gene symbols belonging to a particular module:
 
 
 ```{r msigdb5,eval=FALSE}
-msig$MODULES2GENES <- lapply(foo3, 
+m2g <- lapply(foo3, 
   function(x) strsplit( x["MEMBERS_SYMBOLIZED"], "," )[[1]])
-names(msig$MODULES2GENES) <- msig$MODULES$ID
+names(m2g) <- modules$ID
 
-msig$GENES <- data.frame( ID=unique(unlist(msig$MODULES2GENES)))
-msig <- new("tmod", msig)
+msig <- makeTmod(modules=modules, modules2genes=m2g)
 ```
 
-
 From now on, you can use msig with tmod.
+
+Note that it is not necessary to create the members GENES and GENES2MODULES
+manually. The reverse mapping from genes to modules, GENES2MODULES, will be
+automatically inferred from MODULES2GENES. If no meta-information on genes
+is provided in GENES, then a minimal data frame will be created with one
+column only (ID).
+
 
 
 
@@ -1202,23 +1206,12 @@ rownames(pathways) <- pathways$ID
 ```
 
 
-Finally, we need a data frame containing the gene IDs^[The reason
-why it is a data frame and not simply a vector of IDs and why it is
-necessary at all since it can be calculated from the module to gene
-mapping: it is faster and allows for more than just one gene symbol.]
-and we
-are good to go: we can build the list that will be the value of the
-mset parameter:
+Finally, we are good to go: we can build the tmod object with the makeTmod
+function:
 
 
 ```{r wpex4}
-GENES <- data.frame( ID=unique(unlist(p2GENES)), 
-  stringsAsFactors=FALSE)
-
-Hspaths <- list( MODULES=pathways, 
-      MODULES2GENES=p2GENES, 
-      GENES=GENES )
-Hspaths <- new("tmod", Hspaths)
+Hspaths <- makeTmod(modules=pathways, modules2genes=p2GENES)
 ```
 
 

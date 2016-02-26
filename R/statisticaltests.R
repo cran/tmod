@@ -13,7 +13,6 @@ if(!exists("tmod", .myDataEnv)) {
 ## check user provided mset for sanity
 .mset_sanity_check <- function(mset, modules=NULL) {
 
-
   # sanity checks
   if(!all( c( "MODULES", "MODULES2GENES", "GENES") %in% names(mset)))
     stop("Required members missing from the list mset parameter")
@@ -191,6 +190,7 @@ if(!exists("tmod", .myDataEnv)) {
 #' fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
 #' tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
 #' tmodUtest(tt$GENE_SYMBOL)
+#' @import stats
 #' @export
 tmodUtest <- function( l, modules=NULL, qval= 0.05, 
   order.by= "pval", filter= FALSE, mset="LI", 

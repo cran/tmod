@@ -1,8 +1,8 @@
 Package: tmod
 Type: Package
 Title: Transcriptional Module Analysis
-Version: 0.19
-Date: 2015-06-17
+Version: 0.24
+Date: 2016-02-26
 Author: January Weiner
 Maintainer: January Weiner <january.weiner@gmail.com>
 Description: The tmod package contains definitions of human blood
@@ -10,11 +10,12 @@ Description: The tmod package contains definitions of human blood
 License: GPL (>= 2.0)
 LazyData: false
 VignetteBuilder: knitr
-URL: http://bioinfo.mpiib-berlin.mpg.de/tmod/
+URL: http://bioinfo.mpiib-berlin.mpg.de/tmod
 Imports: beeswarm,pca3d,tagcloud,XML,methods
 Suggests: limma,org.Hs.eg.db, testthat,knitr
-NeedsCompilation: no
-Packaged: 2015-06-18 13:50:40.640 UTC; january
+RoxygenNote: 5.0.1
+Packaged: 2016-02-26 13:57:33.681 UTC; january
 Depends: R (>= 2.10)
+NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2015-06-19 11:20:46
+Date/Publication: 2016-02-26 17:32:41

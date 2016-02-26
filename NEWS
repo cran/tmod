@@ -1,0 +1,14 @@
+Version 0.24:
+  * msigDB is broken, it no longer has unique identifiers in the global XML
+    file. I corrected the import function to make sure identifiers are
+    unique.
+  * pvalEffectPlot was expecting log10(p-values) rather than p-values. This
+    has been taken care of.
+  * evidencePlot can now generate GSEA-style curves (with the "style"
+    option)
+
+
+Version 0.22:
+
+  * added Cohen's d estimate and t statistic to tmodLimmaTopTable()
+  * rewrote evidencePlot: it is now much more flexible
