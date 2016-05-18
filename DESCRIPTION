@@ -1,12 +1,11 @@
 Package: tmod
 Type: Package
 Title: Transcriptional Module Analysis
-Version: 0.24
-Date: 2016-02-26
+Version: 0.26
+Date: 2016-05-13
 Author: January Weiner
 Maintainer: January Weiner <january.weiner@gmail.com>
-Description: The tmod package contains definitions of human blood
-    transcriptional modules and tools to analyse them.
+Description: Gene set enrichment analysis tools and definitions of human blood transcriptional modules.
 License: GPL (>= 2.0)
 LazyData: false
 VignetteBuilder: knitr
@@ -14,8 +13,8 @@ URL: http://bioinfo.mpiib-berlin.mpg.de/tmod
 Imports: beeswarm,pca3d,tagcloud,XML,methods
 Suggests: limma,org.Hs.eg.db, testthat,knitr
 RoxygenNote: 5.0.1
-Packaged: 2016-02-26 13:57:33.681 UTC; january
-Depends: R (>= 2.10)
 NeedsCompilation: no
+Packaged: 2016-05-14 21:17:37.216 UTC; january
+Depends: R (>= 2.10)
 Repository: CRAN
-Date/Publication: 2016-02-26 17:32:41
+Date/Publication: 2016-05-18 01:41:10

@@ -1,3 +1,6 @@
+Version 0.25:
+  * corrected the malfunctioning testthat test
+
 Version 0.24:
   * msigDB is broken, it no longer has unique identifiers in the global XML
     file. I corrected the import function to make sure identifiers are
