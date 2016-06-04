@@ -25,26 +25,45 @@
 
 #' Select genes belonging to a module from a data frame
 #'
-#' Select genes belonging to a module from a data frame
+#' Select genes belonging to a module from a data frame or vector
 #' 
-#' showModule filters a data frame such that only genes from a module are
-#' shown.
-#' @param df a data frame
+#' showModule filters a data frame or a vector such that only genes from a module are
+#' shown. Use it, for example, to show a subset of topTable result from
+#' limma in order to see which genes from a module are significantly
+#' regulated. In essence, this is just a wrapper around "subset()".
+#' @param x a data frame or a vector
 #' @param genes a character vector with gene IDs
 #' @param module a single character value, ID of the module to be shown
 #' @param mset Module set to use; see "tmodUtest" for details
+#' @param extra If true, additional information about the features will be shown
 #' @export
-showModule <- function(df, genes, module, mset="all") {
+showModule <- function(x, genes, module, mset="all", extra=TRUE) {
   mset <- .getmodules2(NULL, mset)
 
-  if(!is(df, "data.frame")) stop( "df must be a data frame" )
+  if(!is(x, "data.frame") && !is(x, "vector") && !is(x, "factor")) 
+    stop( "x must be a data frame, a factor or a vector" )
+
+  is.df <- is(x, "data.frame")
+
   if(!module %in% mset$MODULES$ID) stop("no such module")
+  genes <- as.character(genes)
+
+  if(is.df && length(genes) != nrow(x)) 
+    stop("genes must be of length equal to the number of rows of x")
+
+  if(!is.df && length(genes) != length(x))
+    stop("genes must be of length equal to the length of x")
 
   sel <- genes %in% mset$MODULES2GENES[[module]]
 
   if(sum(sel) == 0) warning("No genes belonging to that module found")
 
-  df[ genes %in% mset$MODULES2GENES[[module]], ]
+  x   <- subset(x, sel)
+  genes <- genes[sel]
+
+  if(extra) x <- cbind(x, mset$GENES[genes,])
+
+  x
 }
 
 

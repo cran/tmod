@@ -13,7 +13,7 @@
 #' Li, Shuzhao, Nadine Rouphael, Sai Duraisingham, Sandra Romero-Steiner, Scott Presnell, Carl Davis, Daniel
 #' S Schmidt, et al. 2014. "Molecular Signatures of Antibody Responses Derived from a Systems Biology Study
 #' of Five Human Vaccines." Nature Immunology 15(2):195-204. 
-#' @seealso tmod-class
+#' @seealso tmod-class, modmetabo
 #' @examples
 #' # list of first 10 modules
 #' data(tmod)

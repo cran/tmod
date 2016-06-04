@@ -1,0 +1,59 @@
+twoA	as.matrix	c	cbind	data	eBayes	Egambia	head	library	lmFit	rep	topTable
+basic2	c	E	Egambia	rep	showGene
+mod1	<	>	$	&	abs	tmodHGtest	tt
+mod2	$	head	nrow	tmodUtest	tt
+fourB	$	head	tmodCERNOtest	tt
+five	evidencePlot	l
+limma1	$	Egambia	fit	head	length	names	tmodLimmaTest
+limma2	>	$	abs	c	fit	head	length	max	min	order	par	plot	print	segments	T	tmodLimmaTopTable
+limma3	$	abs	Egambia	fit	head	order	T	tmodCERNOtest	tmodLimmaTopTable
+pplot0	head	res.l	tmodSummary
+pplot1	res.l	tmodPanelPlot
+pplot2	$	data	Egambia	fit	head	order	T	tmod	tmodLimmaDecideTests
+pplot3	pie	res.l	tmodPanelPlot
+pplot4	pie	res.l	tmodPanelPlot
+pplot5	[[	$	cbind	Egambia	fit	identical	pie	tmodDecideTests	topTable
+fiveB	$	head	tmodUtest	tt
+six	$	as.character	c	E	group	legend	library	par	pca2d	prcomp	t
+seven	$	abs	Egambia	head	order	pca	tmodUtest
+pcasum	$	abs	apply	Egambia	order	pca	T	tmodCERNOtest	tmodSummary
+pcsum2	tmodPanelPlot	x
+pcsum3	$	apply	gs	pca	quantile	tmodDecideTests	tmodPanelPlot	x
+eight	$	library	log10	res	smoothPalette	strmultline	tagcloud
+nine	$	abs	as.character	c	Egambia	group	layout	legend	log10	matrix	mypal	order	par	pca	pca2d	smoothPalette	strmultline	tagcloud	tags	tmodUtest	w
+nineB	$	Egambia	group	list	mypal	pca	tmodPCA
+perm1	$	eBayes	lmFit	ncol	order	require	sample	topTable
+perm2	$	as.matrix	c	cbind	dim	Egambia	permset	rep	sapply	set.seed	tmodAUC
+perm3	==	>=	$	$<-	all	c	design	E	eBayes	Egambia	head	lmFit	N	order	p.adjust	pauc	perms	rownames	sapply	sum	T	tmodCERNOtest	topTable
+ten	[[	$	data	geneSetTest	sapply	tmod	tmodUtest	tt
+eleven	$	abline	gst	plot	res
+exmset	c	data.frame	list	makeTmod
+msigdbparse1	tmodImportMSigDB
+msigdb6	$	head	msig	tmodCERNOtest	tt
+msigdb7	==	$	msig	tmodCERNOtest	tt
+msigdb1	library	xmlParse	xmlToList
+msigdb2	[[	class	foo2
+msigdb2b	names	path1
+msigdb3	==	!	foo2	is.null	sapply	unique
+msigdb4	c	colnames<-	data.frame	foo3	sapply	t
+msigdb5	[[	$	foo3	lapply	makeTmod	modules	names<-	strsplit
+wpex1	$	$<-	download.file	gsub	T	tempfile	unzip
+wpex2	$	as.character	files	human	library	ls	mget	names<-	org.Hs.egSYMBOL	read.csv	sapply	suppressMessages	unique	unlist	unz
+wpex3	>	$	$<-	data.frame	files	length	p2GENES	paste0	rownames<-	sapply
+wpex4	makeTmod	p2GENES	pathways
+wpex5	$	Hspaths	tmodCERNOtest	tt
+wpex6	$	grep	Hspaths	T	tmodCERNOtest	tt
+metabodata	data	factor	gsub	rownames	table	tbmprof
+metabowilcoxon	~	$	apply	c	colnames	data.frame	sapply	t	T	tbmprof	wilcox.test
+metabo01	$	c	modmetabo
+metabopanelplot	res	tmodPanelPlot
+metabopie	$	c	colnames<-	modmetabo	res	tmodDecideTests	tmodPanelPlot	wcx
+metabowilcoxontmod	$	$<-	list	modmetabo	order	tmodCERNOtest	wcx
+metabosex	$	c	modmetabo	order	par	sex	showGene	showModule	tb	tbmprof
+pplot2.5	all	names	pie	res.l
+nineC	$	Egambia	pca	plot	print	tmodPCA
+tmodpca	colnames	list	modmetabo	prcomp	T	tb	tbmprof	tmodPCA
+tmodpca3	$	ret	tmodPanelPlot
+tmodpca4	colnames	list	modmetabo	prcomp	T	tb	tbmprof	tmodPCA
+tmodpca5	~	$	c	head	lm	order	sapply	summary	t
+tmodpca6	c	colnames	list	modmetabo	paste	pca	sex	tb	tbmprof	tmodPCA

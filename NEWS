@@ -1,5 +1,14 @@
+Version 0.27:
+  * Introduced metabolic modules and created a vignette section for a case
+    study in metabolomic
+  * changed the return object of tmodPCA()
+  * added the "extra" parameter to showModule(); showModule() can take a
+    data frame or a vector now
+  * added "row.labels.style" parameter to tmodPanelPlot()
+
 Version 0.25:
-  * corrected the malfunctioning testthat test
+  * corrected the malfunctioning testthat test. I HATE TESTTHAT.
+
 
 Version 0.24:
   * msigDB is broken, it no longer has unique identifiers in the global XML

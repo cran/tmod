@@ -12,18 +12,19 @@ vignette: >
   %\SweaveUTF8
   \usepackage[utf8](inputenc)
 abstract: |
-  The package `tmod` uses blood transcriptional modules described
+  The package `tmod` provides blood transcriptional modules described
   by Chaussabel et al. [-@chaussabel2008modular] and by Li et al.
-  [-@li2014molecular]. Furthermore, the package includes tools for testing
+  [-@li2014molecular] as well as metabolic profiling clusters from Weiner
+  et al. [-@weiner2012biomarkers]. Furthermore, the package includes tools for testing
   the significance of enrichment of the modules as well as visualisation of
-  the genes and modules. This vignette is a tutorial for the package.
+  the features (genes, metabolites etc.) and modules. This vignette is a tutorial for the package.
 toc: yes
 bibliography: bibliography.bib
 ---
 
 ```{r setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE}
 library(knitr)
-opts_chunk$set(cache=FALSE, autodep=FALSE, tidy=FALSE)
+opts_chunk$set(cache=TRUE, autodep=TRUE, tidy=FALSE, fig.width=5, warning=FALSE, fig.height=5)
 opts_knit$set(width=75)
 ```
 
@@ -199,8 +200,6 @@ evidencePlot(l, "LI.M75")
 ```
 
 
-
-
 In essence, this is a receiver-operator characteristic (ROC) curve, and the
 area under the curve (AUC) is related to the U-statistic, from which the P-value
 in the tmodUtest is calculated, as 
@@ -214,8 +213,6 @@ $$r=1-\frac{2\cdot U}{n_1\cdot n_2} = 1 - 2\cdot\text{AUC}$$
 In the above diagram, we see that nine out of the 10 genes that belong to
 the LI.M75 module and which are present in the Egambia data set are ranked
 among the top 1000 genes (as sorted by p-value).
-
-
 
 
 
@@ -408,10 +405,16 @@ tmod$MODULES["DC.M3.4",]
 ```
 
 
-
 The pie object is a list. Each element of the list corresponds to one
 coefficient and is a data frame with the columns "Down", "Zero" and "Up" (in
-that order). We can use this information in tmodPanelPlot:
+that order). Importantly, all names of the "res.l" list must correspond to
+an item in the pie list.
+
+```{r pplot2.5}
+all(names(pie) %in% names(res.l))
+```
+
+We can now use this information in tmodPanelPlot:
 
 
 
@@ -652,9 +655,7 @@ tagcloud(strmultline(res3$Title),
 
 
 As mentioned previously, there is a way of doing it all with tmod much more
-quickly. Note that `plot.params` are just parameters which will be passed to
-the pca2d function.
-
+quickly, in just a few lines of code: 
 
 ```{r nineB,fig=FALSE,cache=TRUE,include=FALSE,results="hide"}
 tmodPCA(pca, 
@@ -663,6 +664,26 @@ tmodPCA(pca,
   plot.params=list(group=group,
   palette=mypal
   ))
+```
+
+Note that `plot.params` are just parameters which will be passed to
+the pca2d function. However, remember that is must be a list.
+
+To plot the PCA, tmod uses the function pca2d from the pca3d
+package, but you can actually do it yourself by providing tmodPCA with a
+suitable function. The only requirement is that
+the function takes named parameters "pca" and "components":
+
+```{r nineC}
+plotf <- function(pca, components) {
+  id1 <- components[1]
+  id2 <- components[2]
+  print(id1)
+  print(id2)
+  plot(pca$x[,id1], pca$x[,id2])
+}
+ret <- tmodPCA(pca, genes=Egambia$GENE_SYMBOL, 
+  components=3:4, plotfunc=plotf)
 ```
 
 
@@ -752,8 +773,6 @@ res <- res[order(res$AUC, decreasing=T),]
 head(res[order(res$perm.P.Val),
   c("ID", "Title", "AUC", "adj.P.Val", "perm.P.Val.adj") ])
 ```
-
-
 
 
 
@@ -1240,6 +1259,233 @@ tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths,
 
 Since the number of tests is lower, the type-II interferon signalling is
 now significant.
+
+
+
+
+Case study: Metabolic profiling of TB patients
+=================================================================
+
+## Introduction
+
+One of the main objectives in writing tmod was the ability to analyse
+metabolic profiling data and other uncommon data sets. In 2012, we have
+analysed metabolic profiles of serum collected from patients suffering from
+tuberculosis (TB) and healthy controls [@weiner2012biomarkers].  It turned
+out that there are huge differences between these two groups of
+individuals, involving amino acid metabolism, lipid metabolism and many
+others. In the course of the analysis, we found correlations between the
+metabolites which are not explained fully by the metabolic pathways. For
+example, cortisol is correlated with kynurenine due to the immunoactive
+function of these molecules indicating an activation of the immune system,
+and not because these two molecules are linked by a synthesis process.
+Vice versa, kynurenine and tryptophan were not directly correlated, even
+though these molecules are clearly linked by a metabolic process, because
+tryptophan is not an immune signalling molecule, while kynurenine is.
+
+The tmod package includes both, the data set used in the Weiner et al.
+paper and the cluster definitions (modules) published therein. In the following, we
+will use these modules to analyse the metabolic profiles^[Formally, this is not correct, as the modules were derived from the data
+set that we are going to analyse, however it serves for demonstration
+purposes].
+
+First, we load the data modules and the data set to analyse.
+
+```{r metabodata}
+data(modmetabo) ## modules
+data(tbmprof)
+ids <- rownames(tbmprof)
+tb <- factor(gsub("\\..*", "", ids))
+sex <- factor( gsub( ".*\\.([MF])\\..*", "\\1", ids))
+table(tb, sex)
+```
+
+## Differential analysis
+
+The metabolic profiling data has not exactly a normal distribution, but
+that varies from one compound to another. It is possible to normalize it by
+ranking, but we can simply use the wilcoxon test to see differences between
+males and females as well as TB patients and healthy individuals.
+
+```{r metabowilcoxon}
+wcx.tb <- apply(tbmprof, 2, function(x) wilcox.test(x ~ tb, conf.int=T))
+wcx.tb <- t(sapply(wcx.tb, function(x) c(x$estimate, x$p.value)))
+
+wcx.sex <- apply(tbmprof, 2, function(x) wilcox.test(x ~ sex, conf.int=T))
+wcx.sex <- t(sapply(wcx.sex, function(x) c(x$estimate, x$p.value)))
+
+wcx <- data.frame(ID=colnames(tbmprof),
+                  E.tb=wcx.tb[,1], pval.tb=wcx.tb[,2],
+                  E.sex=wcx.sex[,1], pval.sex=wcx.sex[,2],
+                  row.names=colnames(tbmprof))
+```
+
+The data frame contains the results of all tests. We can now test both the
+healthy/tb comparison and the male/female comparison for enrichment in
+metabolic profiling modules. Instead ordering the feature identifiers, we
+use the option "input.order" to determine the sorting.
+
+```{r metabowilcoxontmod}
+ids <- wcx$ID
+res <- list()
+res$tb <- tmodCERNOtest(ids[order(wcx$pval.tb)], mset=modmetabo)
+res$tb
+
+res$sex <- tmodCERNOtest(ids[order(wcx$pval.sex)], mset=modmetabo)
+res$sex
+
+```
+
+Both these result tables are concordant with previous findings. The
+enriched modules in male vs. female comparison are what one would
+expect.  In TB, a cluster consisting of kynurenine, bile acids and cortisol
+is up-regulated, while amino acids go down. We can take a closer look at it
+using the evidencePlot function.
+
+Why is there a module called "Amino acid cluster" and another one called
+"Amino acid"?  The "cluster" in the name of the module indicates that it
+has been build by clustering of the profiles, while the other module has
+been based on the biochemical classification of the molecules. This
+information is contained in the `Category` column of the `MODULES` data frame:
+
+```{r metabo01}
+modmetabo$MODULES[ c("ME.107", "MP.2"), ]
+```
+
+To get an overview for both of these comparisons at the same time, we can
+use the tmodPanelPlot function. The size of the blobs below corresponds to
+the AUC values from the tables above.
+
+```{r metabopanelplot,fig.width=10,fig.height=7}
+tmodPanelPlot(res)
+```
+
+This, unfortunately, does not tell us in which group the metabolites from a given
+modules are higher. For this, we can use the "estimate" from the
+wilcox.test above and a parameter for tmodPanelPlot called "pie". To create
+the value for this parameter -- a list that describes, for each condition
+and for each module, how many metabolites change in one direction, and how
+many change in the other.
+
+```{r metabopie,fig.width=7, fig.height=4}
+pie.data <- wcx[,c("E.sex", "E.tb")]
+colnames(pie.data) <- c("sex", "tb")
+pie <- tmodDecideTests(wcx$ID, lfc=pie.data, lfc.thr=0.2, mset=modmetabo)
+tmodPanelPlot(res, pie=pie, pie.style="rug", grid="between")
+
+```
+
+We see now that the cortisol cluster is higher in TB, while amino acids are
+found at lower concentration in the patients. Also, we see that most of the
+steroids found (cluster ME.26 and module MS.1) are lower in females. The
+latter is not surprising if we inspect it closely.
+
+```{r metabosex,fig.width=12,fig.height=6}
+
+wcx <- wcx[order(wcx$pval.sex),]
+showModule(wcx[,c("E.sex", "pval.sex")], wcx$ID, "MS.1", mset=modmetabo)
+i <- "HMDB00493" # what is it?
+modmetabo$GENES[i,]
+par(mfrow=c(1,2))
+showGene(tbmprof[,i], sex, main=modmetabo$GENES[i, "Name"],
+  ylab="Relative abundance")
+
+## now for cortisol cluster
+i <- "HMDB00063"
+wcx <- wcx[order(wcx$pval.tb),]
+showModule(wcx[,c("E.tb", "pval.tb")], wcx$ID, "ME.37", 
+  mset=modmetabo)[1:10,] # only first 10!
+showGene(tbmprof[,i], tb, main=modmetabo$GENES[i, "Name"],
+  ylab="Relative abundance")
+```
+
+## Functional multivariate analysis
+
+We can practically circumvent a gene-by-gene analysis. In fact, we are
+rarely interested in the p-values associated with single genes or
+metabolites. There is too many of them, and the statistical power is
+limited by the sheer number of tests and the requirement of correction for
+multiple testing. In case you have not read the part on FMA above, "Functional multivariate analysis", in its simplest form,
+is simply combining a principal component analysis (PCA) with enrichment
+analysis. PCA lets us explore where the variance in the data is; enrichment
+analysis allows us to interprete the principal components in functional
+terms. 
+
+In tmod, it can be done in a few lines of code:
+
+```{r tmodpca}
+pca <- prcomp(tbmprof, scale.=T)
+ret <- tmodPCA(pca, genes=colnames(tbmprof), mset=modmetabo,
+  plot.params=list(group=tb, legend="topright"))
+```
+
+The `ret` object now contains the results of enrichments (in the
+ret$enrichments member) and we can directly throw it on a panel plot:
+
+```{r tmodpca3,fig.width=10,fig.height=6}
+tmodPanelPlot(ret$enrichments)
+```
+
+OK, but which of the terms are characteristic for TB patients? Which for
+the healthy controls?  In the above, the enrichments were based on a list
+sorted by the absolute PCA weights. However, we can split it into a list
+ordered by signed weights ordered once from small to large values, and once
+from large to small values.
+
+
+```{r tmodpca4}
+pca <- prcomp(tbmprof, scale.=T)
+ret <- tmodPCA(pca, genes=colnames(tbmprof), mset=modmetabo,
+  plot.params=list(group=tb, legend="topright"),
+  mode="cross")
+```
+
+In essence, reading this plot is simple. First, note that this time the tag
+clouds on the top and the bottom correspond to the two ends of the
+vertical, y axis (second component); and the tag clouds at the left and
+right correspond to the two ends of the horizontal, x axis (first PCA
+component).
+
+Now, take the amino acid cluster
+(bottom of the plot): it is enriched at the lower end of the y axis, which
+means, that features in that cluster are higher in the yellow points which are at
+the bottom of the plot (lower end of the y). In other words, amino acids
+are higher in healthy persons -- a finding which corroborates the
+differential analysis above.
+
+Similarly, "kynurenines" are at the left, lower side of the x axis, which
+means, that features from this cluster are at higher levels in TB patients.
+
+What about the male-female differences? They probably can be found in
+other, less important^[That is, components which include a smaller fraction
+of the total variance in the data set] components. We could look for them
+manually, but we can also search which of the responses (turned to
+orthogonal PCA components) is best predicted by the `sex` factor.
+
+
+```{r tmodpca5}
+foo <- summary(lm(pca$x ~ sex))
+foo <- t(sapply(foo, 
+  function(x) c(r=x$r.squared, pval=x$coefficients[2,4])))
+head(foo[ order(foo[,2]), ])
+```
+
+We can use the components 1 (which corresponds to TB/healthy) and
+components 5, which corresponds to male/female differences, as suggested by
+the above calculations.
+
+```{r tmodpca6}
+ret <- tmodPCA(pca, genes=colnames(tbmprof), mset=modmetabo,
+  plot.params=list(group=paste(sex, tb), legend="topright"),
+  components=c(2,5))
+```
+
+Orange circles and blue triangles are females, located mostly in Q1 and Q2
+(top half); this corresponds to differences on the y axis and the tagcloud
+next to it (hormone cluster, steroids etc.). On the other hand, TB patients
+(blue triangles and yellow circles) are in Q1 and Q4 (right-hand side),
+which corresponds to the TB-specific tag cloud below the y axis.
+
 
 
 References

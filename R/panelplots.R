@@ -526,12 +526,13 @@ pvalEffectPlot <- function(e, p,
 #' many of the genes in a module are significantly up- or down regulated.
 #' tmodPanelPlot can draw a pie chart based on the optional argument "pie".
 #' The argument must be a list of length equal to the length of x.
+#' Note also that the names of the pie list must be equal to the names of x.
 #' Objects returned by the function tmodDecideTests can be directly used
 #' here. The rownames of either the data frame or the array must be the
 #' module IDs.
 #' 
 #' @param x list, in which each element has been generated with a tmod test function
-#' @param pie a data frame or a three-dimensional array with information for drawing a pie chart
+#' @param pie a list of data frames with information for drawing a pie chart
 #' @param clust whether, in the resulting data frame, the modules should be
 #' ordered by clustering them with either q-values ("qval") or the effect size
 #' ("effect"). If NULL, the modules are sorted alphabetically by their ID.
@@ -545,6 +546,9 @@ pvalEffectPlot <- function(e, p,
 #' of the list x will be used.
 #' @param row.labels Labels for the modules. This must be a named vector, with module IDs as vector names. If NULL, module titles from
 #' the analyses results will be used.
+#' @param row.labels.auto Automatic generation of row labels from module
+#' data: "both" (default, ID and title), "id" (only ID), "title" (only title),
+#' "none" (no row label)
 #' @param pie.colors character vector of length equal to the cardinality of the third dimension of the pie argument.
 #' @param grid Style of a light-grey grid to be plotted; can be "none", "at" and "between"
 #' @param plot.cex a numerical value giving the amount by which the plot
@@ -581,13 +585,16 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   filter.empty.cols=FALSE, filter.empty.rows=TRUE, filter.unknown=TRUE,
   filter.rows.pval=0.05,
   filter.by.id=NULL,
-  col.labels=NULL, row.labels=NULL, 
+  col.labels=NULL, 
+  col.labels.style="top",
+  row.labels=NULL, 
+  row.labels.auto="both",
   pval.thr=10^-2,
   plot.func=NULL,
   grid="at", 
   pie.colors=c("#0000FF", "#cccccc", "#FF0000" ),
   plot.cex=1, text.cex=1, 
-  pie.style="pie", col.labels.style="top",
+  pie.style="pie", 
   legend.style="auto", ... ) {
 
   x <- .xcheck(x)
@@ -601,11 +608,19 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   if(!is.null(filter.by.id)) 
     df <- df[ df$ID %in% filter.by.id, , drop=FALSE ]
 
-  # check the row labels
+
+  # check the column labels
   if(is.null(col.labels)) col.labels <- names(x)
   if(is.null(col.labels)) col.labels <- paste0("X.", 1:length(x))
+
+  # handle row labels
+  row.labels.auto <- match.arg(row.labels.auto, c("title", "id", "both", "none"))
   if(is.null(row.labels)) {
-    row.labels <- df$Title
+    row.labels <- switch(row.labels.auto,
+      title=df$Title,
+      id=df$ID,
+      both=sprintf("%s (%s)", df$Title, df$ID),
+      none=rep("", nrow(df)))
   } else {
     if(!all(df$ID %in% names(row.labels)))
       stop("row.labels must be a named vector with all module IDs")

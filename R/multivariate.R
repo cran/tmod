@@ -139,6 +139,8 @@ tmodPCA <- function( pca, loadings=NULL, genes,
   mode <- match.arg( mode, c( "simple", "leftbottom", "cross" ) )
   tmodfunc <- match.arg(tmodfunc, c( "tmodCERNOtest", "tmodUtest" ))
   tfunc <- switch(tmodfunc, tmodCERNOtest=tmodCERNOtest, tmodUtest=tmodUtest)
+  oldpar <- par("mfrow") # try to restore the screen after layout()
+  on.exit(par(oldpar))
 
   if( mode == "simple" ) { 
     layout(matrix(c(2,3,
@@ -162,16 +164,17 @@ tmodPCA <- function( pca, loadings=NULL, genes,
   cc <- components
 
   ret <- list()
+  ret$enrichments <- list()
 
   if( mode == "simple" ) {
     ids <- paste0( "Component", cc )
     res <- tfunc( genes[ order( abs( pca$rotation[,cc[1]] ), decreasing=T ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify )
-    ret[[ids[1]]] <- res
+    ret$enrichments[[ids[1]]] <- res
 
     res <- tfunc( genes[ order( abs( pca$rotation[,cc[2]] ), decreasing=T ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify, fvert=1 )
-    ret[[ids[2]]] <- res
+    ret$enrichments[[ids[2]]] <- res
   } else {
     ids <- paste0( "Component", cc )
     ids <- c( paste0(ids[1], c(".left", ".right")), paste0(ids[2], c(".bottom", ".top")))
@@ -181,16 +184,16 @@ tmodPCA <- function( pca, loadings=NULL, genes,
     
     res <- tfunc( genes[ order( pca$rotation[,cc[1]], decreasing=F ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[1], algorithm="fill" )
-    ret[[ids[1]]] <- res
+    ret$enrichments[[ids[1]]] <- res
     res <- tfunc( genes[ order( pca$rotation[,cc[1]], decreasing=T ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[2], algorithm="fill" )
-    ret[[ids[2]]] <- res
+    ret$enrichments[[ids[2]]] <- res
     res <- tfunc( genes[ order( pca$rotation[,cc[2]], decreasing=F ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[3], algorithm="fill" )
-    ret[[ids[3]]] <- res
+    ret$enrichments[[ids[3]]] <- res
     res <- tfunc( genes[ order( pca$rotation[,cc[2]], decreasing=T ) ], ... )
     tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[4], algorithm="fill" )
-    ret[[ids[4]]] <- res
+    ret$enrichments[[ids[4]]] <- res
   }
 
   plot.params <- c(list(pca=pca, components=components), plot.params)
