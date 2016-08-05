@@ -24,7 +24,7 @@ bibliography: bibliography.bib
 
 ```{r setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE}
 library(knitr)
-opts_chunk$set(cache=TRUE, autodep=TRUE, tidy=FALSE, fig.width=5, warning=FALSE, fig.height=5)
+opts_chunk$set(cache=FALSE, autodep=TRUE, tidy=FALSE, fig.width=5, warning=FALSE, fig.height=5)
 opts_knit$set(width=75)
 ```
 
@@ -631,7 +631,7 @@ We can now annotate the PCA axes using the tag clouds; however, see below
 for a shortcut in tmod.
 
 
-```{r nine,fig=TRUE,fig.width=7,fig.height=7,results="hide",cache=TRUE}
+```{r nine,fig=TRUE,fig.width=7,fig.height=7,results="hide"}
 par(mar=c(1,1,1,1))
 o3 <- order(abs(pca$rotation[,3]), decreasing=TRUE)
 l3 <- Egambia$GENE_SYMBOL[o3]
@@ -657,7 +657,7 @@ tagcloud(strmultline(res3$Title),
 As mentioned previously, there is a way of doing it all with tmod much more
 quickly, in just a few lines of code: 
 
-```{r nineB,fig=FALSE,cache=TRUE,include=FALSE,results="hide"}
+```{r nineB,fig=FALSE,include=FALSE,results="hide"}
 tmodPCA(pca, 
   genes=Egambia$GENE_SYMBOL, 
   components=3:4,
@@ -1166,7 +1166,7 @@ download the data (human pathways) and clean it up:
 
 
 
-```{r wpex1, cache=TRUE}
+```{r wpex1}
 human <- tempfile()
 download.file( 
   "http://www.wikipathways.org//wpi/batchDownload.php?species=Homo%20sapiens&fileType=txt", 
@@ -1192,7 +1192,7 @@ identifier.  This gets rid of entities which are not genes (e.g.
 biochemical compounds), but also of some genes.
 
 
-```{r wpex2, cache=TRUE}
+```{r wpex2}
 suppressMessages(library(org.Hs.eg.db))
 p2GENES <- sapply( files$Name, function(fn) {
   foo <- read.csv( unz( human, 

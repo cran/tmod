@@ -1,3 +1,16 @@
+Version 0.28:
+  * Apparently, knitr cache got packed in the package itself, blowing up
+    its size ten fold.
+
+Version 0.29:
+  * A last minute bugfix
+
+Version 0.28:
+  * Added simpleBoxpie - rectangular plots that are thought better to
+    visualize areas than regular pie charts
+  * added a few palette functions from my personal repertoire
+
+
 Version 0.27:
   * Introduced metabolic modules and created a vignette section for a case
     study in metabolomic
@@ -6,8 +19,10 @@ Version 0.27:
     data frame or a vector now
   * added "row.labels.style" parameter to tmodPanelPlot()
 
+
 Version 0.25:
-  * corrected the malfunctioning testthat test. I HATE TESTTHAT.
+  * corrected the malfunctioning testthat test. I HATE TESTTHAT. (Also, I
+    read it as "test t hat" - and wonder about estimates and Student's t)
 
 
 Version 0.24:

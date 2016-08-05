@@ -9,7 +9,9 @@
 
 ## This function implements a friendly palette to be used in graphics
 .mypalette <- function (n = NULL, transparent = "99") {
-    pal <- "E69F00 56B4E9 009E73 F0E442 0072B2 D55E00 CC79A7 669900 660099 996600 990066 666633 666600 aa3366 5B4E85 FF6A5C ADAEA3 A0A376 FF8040 A2D6DA DA9CA5"
+
+
+    pal="E69F00 56B4E9 009E73 F0E442 0072B2 D55E00 CC79A7 669900 660099 996600 990066 666633 666600 aa3366 5B4E85 FF6A5C ADAEA3 A0A376 FF8040 A2D6DA DA9CA5"
 
     pal <- unlist(strsplit(pal, " "))
     pal <- paste("#", pal, transparent, sep = "")
@@ -22,6 +24,64 @@
     }
     return(pal)
 }
+
+## return a gradient palette
+.gradientpal <- function(n=NULL, set="bluewhitered", transparent="99") {
+  if(is.null(n)) n <- 3
+
+  cols <- switch(set,
+    bwr=c("blue", "white", "red"),
+    rwb=c("red", "white", "blue"),
+    ckp=c("cyan", "black", "purple"),
+    rwb=c("purple", "black", "cyan")
+    )
+
+  pal <- colorRampPalette(cols)(n)
+  paste0(pal, transparent)
+}
+
+
+#' A selection of color palettes
+#'
+#' Return a preset selection of colors, adjusted by alpha
+#'
+#' A few palettes have been predefined in tmod, and this function can be
+#' used to extract them. The following palettes have been defined:
+#' * friendly -- a set of distinct, colorblind-friendly colors
+#' * bwr, rwb, ckp, pkc -- gradients (b-blue, r-red, w-white, c-cyan, k-blacK, p-purple)
+#' By default, either all colors are returned, or, if it is a gradient
+#' palette, only three.
+#'
+#' Yes, I wrote this function to save myself the slightest amount of typing.
+#' @param n Number of colors to return (default: all for "friendly", 3 for everything else)
+#' @param set Which palette set (see Details).
+#' @param alpha 0 for maximum transparency, 1 for no transparency.
+#' @param func if TRUE, the returned object will be a function rather than
+#'        a character vector
+#' @return Either a character vector, or, when the func parameter is TRUE,
+#'         a function that takes only one argument (a single number)
+#' @export
+tmodPal <- function(n=NULL, set="friendly", alpha=0.7, func=FALSE) {
+
+  if(alpha > 1) alpha <- 1
+  if(alpha < 0) alpha <- 0
+
+  set <- match.arg(set,
+    c("friendly", "bwr", "rwb", "ckp", "pkc"))
+
+  transparent <- sprintf("%X", as.integer(alpha * 255))
+
+  if(func) {
+    if(set == "friendly") pal <- function(n) .mypalette(n, transparent)
+    else pal <- function(n) .gradientpal(n, set, transparent)
+  } else {
+    if(set == "friendly") pal <- .mypalette(n, transparent)
+    else pal <- .gradientpal(n, set, transparent)
+  }
+
+  return(pal)
+}
+
 
 #' Select genes belonging to a module from a data frame
 #'

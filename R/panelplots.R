@@ -1,5 +1,5 @@
 ## adds a grid behind the picture
-.plotGrid <- function(grid, x.vec, y.vec, row.h, col.w, grid.col="#33333333" ) {
+.plotGrid <- function(grid, x.vec, y.vec, row.h, col.w, grid.col="#333333" ) {
 
   if(grid == "none") return ;
 
@@ -92,12 +92,6 @@
 
 }
 
-
-
-
-
-
-
 ## returns a function for mapping a value onto a color palette
 .getColFunc <- function(min, max, end.col, null.col="#FFFFFF00", start.col="auto", alpha="99", pal.l=12) {
 
@@ -121,71 +115,6 @@
 
 
 
-#' Simple Pie Chart
-#' 
-#' The simplePie function draws a simple pie chart at specified coordinates with
-#' specified width, height and color. The simpleRug function draws a
-#' corresponding rug plot.
-#' 
-#' simplePie() draws a pie chart with width w and height h at coordinates
-#' (x,y). The size of the slices is taken from the numeric vector v, and
-#' their color from the character vector col.
-#' @param x,y coordinates at which to draw the plot
-#' @param w,h width and height of the plot
-#' @param v sizes of the slices
-#' @param col colors of the slices
-#' @param res resolution (number of polygon edges in a full circle)
-#' @examples
-#' plot(NULL, xlim=1:2, ylim=1:2)
-#' col <- c("#cc000099", "#0000cc99")
-#' for(i in 1:25) { 
-#'   x <- runif(1) + 1 
-#'   y <- runif(1) + 1
-#'   simplePie( x, y, 0.05, 0.05, c(x,y), col)
-#' }
-#' @export
-simplePie <- function(x, y, w, h, v, col, res=100) {
-  dev.hold()
-  on.exit(dev.flush())
-
-  v <- c(0, cumsum(v)/sum(v))
-  dv <- diff(v)
-  nv <- length(dv)
-
-  nn <- res
-  w <- w / 2
-  h <- h / 2
-
-  a2xy <- function(a) {
-    t <- pi * (0.5  - 2 * a)
-    list( x=x + w * cos(t), y=y + h * sin(t) )
-  }
-
-  for(i in 1:nv) {
-    ni <- max(2, floor(nn * dv[i])) 
-    po <- a2xy(seq.int(v[i], v[i+1], length.out=ni))
-    polygon(c(x, po$x), c(y, po$y), col=col[i], border=NA)
-  }
-
-  invisible(NULL)
-}
-
-#' @rdname simplePie
-#' @export
-simpleRug <- function(x, y, w, h, v, col) {
-  dev.hold()
-  on.exit(dev.flush())
-
-  x <- x - w/2
-  y <- y - h/2
-
-  v <- x + c(0, cumsum(v)/sum(v)) * w
-  nv <- length(v)
-
-  rect( v[-nv], rep(y, nv-1), 
-        v[-1],  rep(y+h, nv-1), col=col, border=NA)
-
-}
 
 
 #' Create a summary of multiple tmod analyses
@@ -315,6 +244,7 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
 #' }
 #' For the purposes of drawing a legend, the function must accept NULL
 #' p-value or a NULL enrichment parameter.
+#' @return Invisibly returns a NULL value.
 #' @param e matrix with effect sizes
 #' @param p matrix with probabilities
 #' @param col.labels Labels for the columns. If NULL, names of the elements
@@ -324,6 +254,7 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
 #' @param row.labels Labels for the modules. This must be a named vector, with module IDs as vector names. If NULL, module titles from
 #' the analyses results will be used.
 #' @param grid Style of a light-grey grid to be plotted; can be "none", "at" and "between"
+#' @param grid.color Color of the grid to be plotted (default: light grey)
 #' @param col.labels.style Style of column names: "top" (default), "bottom", "both", "none"
 #' @param plot.cex a numerical value giving the amount by which the plot
 #' symbols will be maginfied 
@@ -340,7 +271,7 @@ pvalEffectPlot <- function(e, p,
   pval.thr=0.01, pval.cutoff=1e-6,
   row.labels=NULL, col.labels=NULL, 
   plot.func=NULL,
-  grid="at", 
+  grid="at", grid.color="#333333",
   plot.cex=1, text.cex=1, 
   col.labels.style="top",
   legend.style="auto")  {
@@ -465,7 +396,7 @@ pvalEffectPlot <- function(e, p,
 
   # ---------------------------------------
   # add light grey grid
-  .plotGrid(grid, x.vec, y.vec, row.h, col.w)
+  .plotGrid(grid, x.vec, y.vec, row.h, col.w, grid.col=grid.color)
 
   # ---------------------------------------
   # plot the test results
@@ -503,6 +434,7 @@ pvalEffectPlot <- function(e, p,
 
     ) 
 
+  return(invisible(NULL))
 }
 
 
@@ -549,23 +481,23 @@ pvalEffectPlot <- function(e, p,
 #' @param row.labels.auto Automatic generation of row labels from module
 #' data: "both" (default, ID and title), "id" (only ID), "title" (only title),
 #' "none" (no row label)
-#' @param pie.colors character vector of length equal to the cardinality of the third dimension of the pie argument.
+#' @param pie.colors character vector of length equal to the cardinality of the third dimension of the pie argument. By default: blue, grey and red.
 #' @param grid Style of a light-grey grid to be plotted; can be "none", "at" and "between"
 #' @param plot.cex a numerical value giving the amount by which the plot
 #' symbols will be maginfied 
 #' @param text.cex a numerical value giving the amount by which the plot
 #' text will be magnified, or a vector containing three cex values for row labels, column labels and legend, respectively
 #' @param plot.func Optionally, a function to be used to draw the dots. See "pvalEffectPlot"
-#' @param pie.style Can be either "pie" or "rug"
+#' @param pie.style Can be "pie", "boxpie" or "rug"
 #' @param col.labels.style Style of column names: "top" (default), "bottom", "both", "none"
 #' @param legend.style Style of the legend: "auto" -- automatic; "broad":
 #' pval legend side by side with effect size legend; "tall": effect size
 #' legend above pval legend
-#' @param ... Any further arguments will be passed to the pvalEffectPlot function
+#' @param ... Any further arguments will be passed to the pvalEffectPlot function (for example, grid.color)
 #' @return a data frame with a line for each module encountered anywhere in
 #' the list x, two columns describing the module (ID and module title), and
 #' two columns(effect size and q value) for each element of list x.
-#' @seealso tmodDecideTests, tmodSummary, pvalEffectPlot
+#' @seealso tmodDecideTests, tmodSummary, pvalEffectPlot, simplePie
 #' @examples
 #' data(Egambia)
 #' E <- Egambia[,-c(1:3)]
@@ -674,12 +606,14 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   }
 
   # ------------ PLOTTING ----------------
+
+  # prepare the pie plotting function
   if(!is.null(pie)) {
     plot.func <- .preparePlotFunc(row.ids, 
       pie, min.p, max.p, pie.colors, plot.cex, style=pie.style)
   }
 
-  # make the actual plot
+  # make the actual plot -- pass it on to pvalEffectPlot
   pvalEffectPlot(me, 10^-mq, 
     row.labels=row.labels, col.labels=col.labels, pval.thr=pval.thr,
     grid=grid, plot.cex=plot.cex, text.cex=text.cex, 
@@ -689,21 +623,77 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
 }
 
 
+## select a function which is used to recalculate the bounding box and its
+## position, depending on the pie style
+.selCalcXYWH <- function(style="pie") {
+
+  ret <- NULL
+
+  if(style %in% c( "pie", "boxpie")) {
+    # for pie and boxpie, the size of the plotting widget is proportional to
+    # the effect size, scaled in vertical as well as horizontal, centered
+    ret <- function(x, y, w, h, e, plot.cex) {
+      w <- w * plot.cex * (0.5 + e/2)
+      h <- h * plot.cex * (0.5 + e/2)
+      pp <- par("pin")
+      w2 <- w * pp[1] / pp[2]
+      if(w2 < h) {
+        h <- w2
+      } else {
+        w <- h * pp[2] / pp[1]
+      }
+      return(list(x=x, y=y, w=w, h=h))
+    }
+  } else if(style == "rug") {
+    # rug takes up all the available vertical space, but is scaled
+    # horizontally to reflect the effect size, left-adjusted
+    ret <- function(x, y, w, h, e, plot.cex) {
+      x <- x - w /2
+      w <- w * (0.5 + e )/1.5
+      x <- x + w / 2
+      h <- h * 0.9
+      return(list(x=x, y=y, w=w, h=h))
+    }
+  }
+
+  return(ret) 
+}
+
+
+## choose the right function for plotting
+.selPiePlotFunc <- function(style) {
+
+  switch(style,
+    pie=simplePie,
+    boxpie=simpleBoxpie,
+    rug=simpleRug)
+
+}
+
+
 ## return a plotting function for use as parameter in pvalEffectPlot
 .preparePlotFunc  <- function(row.ids, pie, min.p, max.p, pie.colors, plot.cex, style="pie") {
 
-  style <- match.arg(style, c("pie", "rug"))
+  style <- match.arg(style, c("pie", "rug", "boxpie"))
 
-  # prepare the pie plotting function
+  # prepare the pie coloring function
   col.funcs <- lapply(pie.colors,
     function(xx) .getColFunc( min.p, max.p, xx, alpha="FF" )
     )
 
- 
+  # different pie styles call for different bounding boxes, positions and
+  # plotting functions. Here is the right place to decide which to take.
+  calcXYWH.func <- .selCalcXYWH(style)
+  piePlot.func  <- .selPiePlotFunc(style)
+
+  # here we generate the plotting function that will be called both for
+  # drawing the legend and drawing the pie charts on the panel plot
   plot.func <- function(row, col, x, y, w, h, e, p) {
-    #printf("%s [%d,%d] e=%.2f p=%.2e", df$ID[row], row, col, e, 10^(-p))
+
+    # this is where we take the additional arguments from the "pie" object
+    # and turn it into arguments for the pie widget plotting function
     if(is.null(row)) {
-      v <- c(10, 10, 10)
+      v <- c(10, 10, 10) # row is null when called from legend!
     } else {
       id <- row.ids[row]
       v <- pie[[col]][id,]
@@ -716,42 +706,31 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
 
     mycols <- sapply(col.funcs, function(x) x(p))
 
-    if(style == "pie") {
-      w <- w * plot.cex * (0.5 + e/2)
-      h <- h * plot.cex * (0.5 + e/2)
-      pp <- par("pin")
-      w2 <- w * pp[1] / pp[2]
-      if(w2 < h) {
-        h <- w2
-      } else {
-        w <- h * pp[2] / pp[1]
-      }
+    xywh <- calcXYWH.func(x, y, w, h, e, plot.cex)
 
-      simplePie(x, y, w, h, v=v, col=mycols)
-    } else {
-      x <- x - w /2
-      w <- w * (0.5 + e )/1.5
-      x <- x + w / 2
-      h <- h * 0.9
-      simpleRug(x, y, w, h, v=v, col=mycols)
-    }
+    with(xywh, piePlot.func(x, y, w, h, v=v, col=mycols))
+
   }
 
-  plot.func
+  return(plot.func)
 }
+
+
+## ---------------- argument checking for tmodPanelPlot ---------------------------
 
 
 ## check whether the "pie" argument is correct
 .piecheck <- function(pie, x) {
-
+  if(!is(pie, "list")) 
+    stop( "pie must be a list. Make sure that is.list(pie) == TRUE")
 
   if(is.null(names(pie))) {
-    warning("No names in pie, generating default names")
+    warning("names(pie) is NULL. Generating default names")
     names(pie) <- paste0("X.", 1:length(pie))
   }
 
   if(! all(names(x) %in% names(pie))) 
-    stop("All named elements of x must be found in pie")
+    stop("All named elements of x must be found in pie. Please make sure that all(names(x) %in% names(pie))")
 
   pie <- pie[names(x)]
 
@@ -762,11 +741,11 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
 
 ## check whether the x argument is correct
 .xcheck <- function(x) {
-  if(!is(x, "list")) stop( "x must be a list object")
+  if(!is(x, "list")) stop( "x must be a list object. Make sure that is.list(x) == TRUE")
 
   z <- sapply(x, is.data.frame)
   if(any(!z)) {
-    warning(sprintf("Some elements of x are not data frames, removing %d", sum(!z)))
+    warning(sprintf("Some elements of x are not data frames, removing %d elements", sum(!z)))
     x <- x[ z ]
   }
 
@@ -774,7 +753,7 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
     stop("No usable elements of x")
 
   if(is.null(names(x))) {
-    warning("No names in x, generating default names")
+    warning("names(x) is NULL. Generating default names")
     names(x) <- paste0("X.", 1:length(x))
   }
 
