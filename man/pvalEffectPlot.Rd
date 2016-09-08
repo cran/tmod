@@ -6,7 +6,7 @@
 \usage{
 pvalEffectPlot(e, p, pval.thr = 0.01, pval.cutoff = 1e-06,
   row.labels = NULL, col.labels = NULL, plot.func = NULL, grid = "at",
-  grid.color = "#333333", plot.cex = 1, text.cex = 1,
+  grid.color = "#33333333", plot.cex = 1, text.cex = 1,
   col.labels.style = "top", legend.style = "auto")
 }
 \arguments{

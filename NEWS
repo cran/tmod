@@ -1,3 +1,6 @@
+Version 0.31:
+  * Use the plotwidgets package for pvalEffectPlot 
+
 Version 0.28:
   * Apparently, knitr cache got packed in the package itself, blowing up
     its size ten fold.

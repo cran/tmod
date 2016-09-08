@@ -1,5 +1,5 @@
 ## adds a grid behind the picture
-.plotGrid <- function(grid, x.vec, y.vec, row.h, col.w, grid.col="#333333" ) {
+.plotGrid <- function(grid, x.vec, y.vec, row.h, col.w, grid.col="#33333333" ) {
 
   if(grid == "none") return ;
 
@@ -266,12 +266,13 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
 #' legend above pval legend; "none" -- no legend.
 #' @import grDevices
 #' @import graphics
+#' @import plotwidgets
 #' @export
 pvalEffectPlot <- function(e, p, 
   pval.thr=0.01, pval.cutoff=1e-6,
   row.labels=NULL, col.labels=NULL, 
   plot.func=NULL,
-  grid="at", grid.color="#333333",
+  grid="at", grid.color="#33333333",
   plot.cex=1, text.cex=1, 
   col.labels.style="top",
   legend.style="auto")  {
@@ -664,9 +665,9 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
 .selPiePlotFunc <- function(style) {
 
   switch(style,
-    pie=simplePie,
-    boxpie=simpleBoxpie,
-    rug=simpleRug)
+    pie=wgPie,
+    boxpie=wgBoxpie,
+    rug=wgRug)
 
 }
 

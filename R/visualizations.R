@@ -332,8 +332,6 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
   # module
   x <- sapply(m, function(mm) l %in% mset$MODULES2GENES[[mm]])
 
-
-
   # cumulative sum or scaled cumulative sum
   if(roc) {
     if(scaled) {

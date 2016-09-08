@@ -1,6 +1,6 @@
-9acaafb84ccdf8d0f0bbb3c45be47e64 *DESCRIPTION
-4366ce52ce16890bcdf39e857e6ea0cd *NAMESPACE
-ffd0f02ca80e46b01d5278420b0ee40e *NEWS
+6a7520ef8e6505813d608b3689bd1165 *DESCRIPTION
+b5d2328363c7ea4852eece9cac325e3a *NAMESPACE
+6eed9e5c83e06ec9acc16c2d6b287379 *NEWS
 9795c7e210897e1535ecc6a126708d7d *R/Egambia.R
 97c4ef0509515d6d13b7f4efdb6bbbce *R/classes.R
 a92632c1cec14aa1e484b8d846fad606 *R/helpers.R
@@ -8,12 +8,11 @@ a92632c1cec14aa1e484b8d846fad606 *R/helpers.R
 faa2e3c74d01d09d6a874e63c653a266 *R/limma.R
 3833832d3f9e80c41b3cc04a026a3d57 *R/modmetabo.R
 aa202436adaf49f966047c168b2262f2 *R/multivariate.R
-f12efd19419c728e7071c57e753f5d1e *R/panelplots.R
-cd8170129b9e23b3a7dcd1cf82edeab2 *R/plotwidgets.R
+c2b12ef56a8ffe0bd87f0b96a9c1679f *R/panelplots.R
 b932279e1ae396961789d5edfdd66bc9 *R/statisticaltests.R
 f594abdcb0c3242448dd4c38be07c1dd *R/tmod-data.R
 49f2e51dbf12520f1e00b2b245e5d719 *R/tmod-package.R
-c60408f46ec70eb2a68deb786ca503e6 *R/visualizations.R
+3a0b1af8dc7b2153a5c2cd97a0179939 *R/visualizations.R
 a5c70bc59cad50d97ad92eb407348e8c *build/vignette.rds
 2a28116f6eeeaa9226220b410ebbe918 *data/Egambia.rda
 c5179a321a2b8a8a4b14c2566899b261 *data/datalist
@@ -21,7 +20,7 @@ c5179a321a2b8a8a4b14c2566899b261 *data/datalist
 17154c1411294ee554a1011c34e0d010 *data/tbmprof.rda
 ed66472aff5e5d99e52af84267db7eda *data/tmod.rda
 5abcffbe95370bdde8615de82f2981ca *inst/doc/tmod.R
-63ebada04515fcd48c678b31be5d2680 *inst/doc/tmod.pdf
+9e8aa476387069f224b05982d05059e1 *inst/doc/tmod.pdf
 78c0803711492a5ee5b5b548d1478c20 *inst/doc/tmod.rmd
 d51555202f97d621c2c268fcb3f04052 *man/Egambia.Rd
 325c931853b47779772b4dfcd748f966 *man/evidencePlot.Rd
@@ -30,10 +29,9 @@ b81b2b55e56552f019bdffa00a9359ee *man/extract-methods.Rd
 2706347c504bf8f539f545075c68fe24 *man/getModuleMembers.Rd
 403d94dfca9e639d426c06a38a3dc458 *man/hgEnrichmentPlot.Rd
 5ac43bd8cbda7dfd302b737bd5f0a814 *man/modmetabo.Rd
-527b322e2727bfca2c1dc2a578c174c0 *man/pvalEffectPlot.Rd
+e08c1ada46782168ffbd63037367a8de *man/pvalEffectPlot.Rd
 53a0919dba54bacd89f70a2fe84beaa7 *man/showGene.Rd
 0fb4f7c091412fdd2c9f5596ac666016 *man/showModule.Rd
-69459932d59bbe833fcab4d44d09eafb *man/simplePie.Rd
 6787e5ee362dad0e7fb6812077752647 *man/tmod-class.Rd
 eb0cf24cadb64d73863ad09785650d9d *man/tmod-data.Rd
 7382bbdfd98c169051918eb6734bafc2 *man/tmod-package.Rd
@@ -49,7 +47,7 @@ deb835495f946e46dfe6ac40e555fa0d *man/tmodPal.Rd
 41dd600a9cad7b70fdb1819119e403ec *man/tmodSummary.Rd
 386a9e6e0e40fac5e4a2f133ab9a7cee *man/tmodTagcloud.Rd
 2d828b6f1c134d2dd01ef055e6baf5f9 *man/tmodUtest.Rd
-eb291b7c67ea3c0324948a0d53302dcd *tests/testthat.R
+46609a77059ef7cf25c82679f759a2df *tests/testthat.R
 35971cea435b34a368f7ba3cf3a40587 *tests/testthat/res_CERNO.csv
 bbf9c68364179b1885512fb6790ad11e *tests/testthat/res_HG.csv
 87a5bccf92e912023bd14e3985470f61 *tests/testthat/res_U.csv
