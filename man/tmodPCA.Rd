@@ -5,7 +5,7 @@
 \title{PCA plot annotated with tmod}
 \usage{
 tmodPCA(pca, loadings = NULL, genes, tmodfunc = "tmodCERNOtest",
-  plotfunc = pca2d, mode = "simple", components = c(1, 2),
+  plotfunc = pcaplot, mode = "simple", components = c(1, 2),
   plot.params = NULL, filter = TRUE, simplify = TRUE, legend = FALSE,
   ...)
 }
@@ -74,4 +74,3 @@ tmodPCA(pca,
   components=4:3,
   plot.params=list(group=group))
 }
-

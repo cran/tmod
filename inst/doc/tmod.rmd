@@ -22,7 +22,7 @@ toc: yes
 bibliography: bibliography.bib
 ---
 
-```{r setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE}
+```{r setup, echo=FALSE, results="hide", include=FALSE}
 library(knitr)
 opts_chunk$set(cache=FALSE, autodep=TRUE, tidy=FALSE, fig.width=5, warning=FALSE, fig.height=5)
 opts_knit$set(width=75)
@@ -501,21 +501,20 @@ principal component analysis (PCA), visualised using the pca3d package
 
 
 ```{r six,fig=TRUE,fig.width=8,fig.height=5}
-library(pca3d)
 mypal <- c("#E69F00", "#56B4E9")
 pca <- prcomp(t(E), scale.=TRUE)
+
+col <- mypal[ factor(group) ]
 par(mfrow=c(1, 2))
-l<-pca2d(pca, group=group, 
-  palette=mypal)
-cols <- as.character(l$colors)
+l<-pcaplot(pca, group=group, col=col)
+ 
 legend("topleft", as.character(l$groups),
-       pch=l$shapes,
-       col=cols, bty="n")
-l<-pca2d(pca, group=group, components=3:4,
-  palette=mypal)
+       pch=l$pch,
+       col=l$colors, bty="n")
+l<-pcaplot(pca, group=group, col=col, components=3:4)
 legend("topleft", as.character(l$groups),
-       pch=l$shapes,
-       col=cols, bty="n")
+       pch=l$pch,
+       col=l$colors, bty="n")
 ```
 
 
@@ -638,14 +637,17 @@ l3 <- Egambia$GENE_SYMBOL[o3]
 res3 <- tmodUtest(l3)
 layout(matrix(c(3,1,0,2),2,2,byrow=TRUE),
   widths=c(1/3, 2/3), heights=c(2/3, 1/3))
+col <- mypal[ factor(group) ]
+
 # note -- PC4 is now x axis!!
-l<-pca2d(pca, group=group, components=4:3,
-  palette=mypal, radius=1.8)
-cols <- as.character(l$colors)
+l <- pcaplot(pca, group=group, components=4:3,
+  col=col, cex=1.8)
+
 legend("topleft", 
   as.character(l$groups),
-  pch=l$shapes,
-  col=cols, bty="n")
+  pch=l$pch,
+  col=l$colors, bty="n")
+
 tagcloud(tags, weights=w, col=c, fvert= 0)
 tagcloud(strmultline(res3$Title),
   weights=-log10(res3$P.Value),
@@ -662,17 +664,17 @@ tmodPCA(pca,
   genes=Egambia$GENE_SYMBOL, 
   components=3:4,
   plot.params=list(group=group,
-  palette=mypal
+  col=col
   ))
 ```
 
 Note that `plot.params` are just parameters which will be passed to
 the pca2d function. However, remember that is must be a list.
 
-To plot the PCA, tmod uses the function pca2d from the pca3d
-package, but you can actually do it yourself by providing tmodPCA with a
-suitable function. The only requirement is that
-the function takes named parameters "pca" and "components":
+To plot the PCA, tmod uses the function pcaplot(), but you can actually do
+it yourself by providing tmodPCA with a suitable function. The only
+requirement is that the function takes named parameters "pca" and
+"components":
 
 ```{r nineC}
 plotf <- function(pca, components) {
@@ -686,9 +688,13 @@ ret <- tmodPCA(pca, genes=Egambia$GENE_SYMBOL,
   components=3:4, plotfunc=plotf)
 ```
 
+Alternatively, you can use the function "pca2d" from the pca3d package:
 
-
-
+```{r nineD}
+if(require(pca3d)) plotf <- pca2d
+ret <- tmodPCA(pca, genes=Egambia$GENE_SYMBOL, 
+  components=3:4, plotfunc=plotf, plot.params=list(group=group))
+```
 
 
 
@@ -948,7 +954,8 @@ format^[Note that even if you register with MSig, it is not possible to
 download the database directly from R in the XML format.].
 This
 file can be accessed at the URL
-http://www.broadinstitute.org/gsea/msigdb/download_file.jsp?filePath=/resources/msigdb/5.0/msigdb_v5.0.xml -- follow the link, register and log in, and save the file on your disk (roughly 65MB).
+http://software.broadinstitute.org/gsea/msigdb/download_file.jsp?filePath=/resources/msigdb/6.1/msigdb_v6.1.xml
+-- follow the link, register and log in, and save the file on your disk (roughly 113 MB).
 
 
 Importing MSigDB is easy -- tmod has a function specifically for that
@@ -1153,112 +1160,6 @@ column only (ID).
 
 
 
-
-
-Manual creation of tmod module sets: Wikipathways
---------------------------------------------------------
-
-Below is an example of how to use the pathway definitions from
-WikiPathways^[http://www.wikipathways.org/].
-First, we
-download the data (human pathways) and clean it up:
-
-
-
-
-```{r wpex1}
-human <- tempfile()
-download.file( 
-  "http://www.wikipathways.org//wpi/batchDownload.php?species=Homo%20sapiens&fileType=txt", 
-  destfile=human, mode="wb")
-files <- unzip(human, list=T)
-
-files$ID    <- gsub( ".*_(WP[0-9]*)_.*", "\\1", files$Name )
-files$Title <- gsub( "(.*)_WP[0-9]*_.*", "\\1", files$Name )
-```
-
-
-Since each pathway is in a separate file in the zip archive we downloaded, we
-have to read each file separately. Below, we create a list, `p2GENES`,
-which maps the modules to the corresponding genes. To make it consistent, I
-decided to use gene symbols rather than the Entrez numbers (just because it
-makes the interpretation of results a bit easier), but actually that is not
-necessary: tmod does not care what gene symbols are used, as long as the
-mappings between genes and modules are consistent, and as long as the same
-identifiers are used in the lists of genes.
-
-Furthermore, note that we filter out anything that is not an ENTREZ gene
-identifier.  This gets rid of entities which are not genes (e.g.
-biochemical compounds), but also of some genes.
-
-
-```{r wpex2}
-suppressMessages(library(org.Hs.eg.db))
-p2GENES <- sapply( files$Name, function(fn) {
-  foo <- read.csv( unz( human, 
-  filename= fn ), sep="\t" )
-  ids <- foo$Identifier[ foo$Identifier %in% ls( org.Hs.egSYMBOL ) ]
-  unique(unlist(mget(as.character(ids), org.Hs.egSYMBOL)))
-})
-
-names(p2GENES) <- files$ID
-```
-
-
-p2GENES is the first of three objects that we need to create. The next one
-is a data frame containing module definitions. We also calculate the number
-of associated genes and select pathways that have at least 5 associated
-ENTREZ genes:
-
-
-```{r wpex3}
-pathways <- data.frame( ID=files$ID, 
-  Title=files$Title,
-  stringsAsFactors=FALSE )
-pathways$N <- sapply(p2GENES, length)
-pathways$URL <- 
-  paste0("http://www.wikipathways.org/index.php/Pathway:",
-  pathways$ID )
-sel <- pathways$N > 4
-pathways <- pathways[ sel, ]
-rownames(pathways) <- pathways$ID
-```
-
-
-Finally, we are good to go: we can build the tmod object with the makeTmod
-function:
-
-
-```{r wpex4}
-Hspaths <- makeTmod(modules=pathways, modules2genes=p2GENES)
-```
-
-
-We can now use the tmodCERNOtest to see whether it works:
-
-
-```{r wpex5}
-tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths)
-```
-
-
-Nice -- the complement pathway was also found before, when using the default data set.
-Unfortunately, we don't see anything else: WikiPathways are more oriented
-on metabolic pathways, while the blood transcriptional modules are
-particularly good for analyzing immune responses. However, if we were to
-test a specific hypothesis, we would select modules related to interferon response:
-
-
-```{r wpex6}
-sel <- grep( "Interferon", 
-  Hspaths$MODULES$Title, ignore.case=T )
-tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths, 
-  modules=Hspaths$MODULES$ID[sel]) 
-```
-
-
-Since the number of tests is lower, the type-II interferon signalling is
-now significant.
 
 
 

@@ -4,7 +4,7 @@
 \alias{tmodLimmaTest}
 \title{Run tmod enrichment tests directly on a limma object}
 \usage{
-tmodLimmaTest(f, genes, order.by = "msd", tmodFunc = tmodCERNOtest,
+tmodLimmaTest(f, genes, sort.by = "msd", tmodFunc = tmodCERNOtest,
   coef = NULL, ...)
 }
 \arguments{
@@ -14,7 +14,7 @@ tmodLimmaTest(f, genes, order.by = "msd", tmodFunc = tmodCERNOtest,
 contains the gene symbols corresponding to the gene set collection used, or
 a character vector with gene symbols}
 
-\item{order.by}{How the gene names should be ordered: "msd" (default), "pval" or "lfc"}
+\item{sort.by}{How the gene names should be ordered: "msd" (default), "pval" or "lfc"}
 
 \item{tmodFunc}{The function to run the enrichment tests. Either tmodCERNOtest or tmodUtest}
 
@@ -28,7 +28,7 @@ element is the value returned by tmod test function. The list can be
 directly passed to the functions tmodSummary and tmodPanelPlot.
 }
 \description{
-This function will order the genes according to each of the coefficient
+Order the genes according to each of the coefficient
 found in a limma object and run an enrichment test on the ordered list.
 }
 \details{
@@ -45,15 +45,15 @@ better than ordering by p-value or by log fold change. See discussion in
 the package vignette.
 }
 \examples{
-library(limma)
 data(Egambia)
 design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-ret <- tmodLimmaTest(fit, genes=Egambia$GENE_SYMBOL)
-tmodSummary(ret)
-tmodPanelPlot(ret)
+if(require(limma)) {
+  fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+  ret <- tmodLimmaTest(fit, genes=Egambia$GENE_SYMBOL)
+  tmodSummary(ret)
+  tmodPanelPlot(ret)
+}
 }
 \seealso{
 tmodCERNOtest, tmodUtest, tmodPlotPanel, tmodSummary
 }
-

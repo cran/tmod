@@ -30,4 +30,3 @@ contains less information).
 msig <- tmodImportMSigDB( "msigdb_v5.0.xml" )
 }
 }
-

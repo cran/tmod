@@ -48,4 +48,3 @@ mymset <- makeTmod(modules=m, modules2genes=m2g)
 \seealso{
 tmod-data
 }
-

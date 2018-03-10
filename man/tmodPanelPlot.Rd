@@ -6,11 +6,12 @@
 \usage{
 tmodPanelPlot(x, pie = NULL, clust = "qval", filter.empty.cols = FALSE,
   filter.empty.rows = TRUE, filter.unknown = TRUE,
-  filter.rows.pval = 0.05, filter.by.id = NULL, col.labels = NULL,
-  col.labels.style = "top", row.labels = NULL, row.labels.auto = "both",
-  pval.thr = 10^-2, plot.func = NULL, grid = "at",
-  pie.colors = c("#0000FF", "#cccccc", "#FF0000"), plot.cex = 1,
-  text.cex = 1, pie.style = "pie", legend.style = "auto", ...)
+  filter.rows.pval = 0.05, filter.rows.auc = 0.5, filter.by.id = NULL,
+  col.labels = NULL, col.labels.style = "top", row.labels = NULL,
+  row.labels.auto = "both", pval.thr = 10^-2, pval.thr.lower = 10^-6,
+  plot.func = NULL, grid = "at", pie.colors = c("#0000FF", "#cccccc",
+  "#FF0000"), plot.cex = 1, text.cex = 1, pie.style = "pie",
+  legend.style = "auto", ...)
 }
 \arguments{
 \item{x}{list, in which each element has been generated with a tmod test function}
@@ -29,6 +30,8 @@ ordered by clustering them with either q-values ("qval") or the effect size
 
 \item{filter.rows.pval}{Rows in which no p value is below this threshold will be omitted}
 
+\item{filter.rows.auc}{Rows in which no AUC value is above this threshold will be omitted}
+
 \item{filter.by.id}{if provided, show only modules with IDs in this character vector}
 
 \item{col.labels}{Labels for the columns. If NULL, names of the elements
@@ -44,6 +47,8 @@ data: "both" (default, ID and title), "id" (only ID), "title" (only title),
 "none" (no row label)}
 
 \item{pval.thr}{Results with p-value above pval.thr will not be shown}
+
+\item{pval.thr.lower}{Results with p-value below pval.thr.lower will look identical on the plot}
 
 \item{plot.func}{Optionally, a function to be used to draw the dots. See "pvalEffectPlot"}
 
@@ -113,4 +118,3 @@ tmodPanelPlot(x, text.cex=0.7)
 \seealso{
 tmodDecideTests, tmodSummary, pvalEffectPlot, simplePie
 }
-

@@ -1,7 +1,23 @@
-Version 0.31:
-  * Use the plotwidgets package for pvalEffectPlot 
+Version 0.36, 09.03.2018:
+  * corrected notorious problems with CRAN
+  * please CRAN have mercy
+  * I will sacrifice a virtual goat before submitting
+  * changed parameter "order.by" to "sort.by" in tmodLimmaTest
+  * added function pcaplot; tmod no longer depends on pca3d due to
+    notorious problems with installing rgl on students Mac computers
+  * limma examples now wrapped in if(require(limma))...
 
-Version 0.28:
+Version 0.34, 10.08.2017:
+  * added filter.rows.auc option
+
+Version 0.32:
+  * Added tmodZtest and tmodWZtest
+  * Modified gene.labels option for evidencePlot
+
+Version 0.31:
+  * Use of the plotwidgets package for pvalEffectPlot (rug, boxpie and pie options)
+
+Version 0.30:
   * Apparently, knitr cache got packed in the package itself, blowing up
     its size ten fold.
 
@@ -36,7 +52,6 @@ Version 0.24:
     has been taken care of.
   * evidencePlot can now generate GSEA-style curves (with the "style"
     option)
-
 
 Version 0.22:
 

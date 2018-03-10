@@ -33,4 +33,3 @@ palette, only three.
 
 Yes, I wrote this function to save myself the slightest amount of typing.
 }
-

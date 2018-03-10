@@ -91,11 +91,12 @@ tmodPal <- function(n=NULL, set="friendly", alpha=0.7, func=FALSE) {
 #' shown. Use it, for example, to show a subset of topTable result from
 #' limma in order to see which genes from a module are significantly
 #' regulated. In essence, this is just a wrapper around "subset()".
+#' @return Either a filtered vector or (if extra==TRUE) a data frame.
 #' @param x a data frame or a vector
 #' @param genes a character vector with gene IDs
 #' @param module a single character value, ID of the module to be shown
 #' @param mset Module set to use; see "tmodUtest" for details
-#' @param extra If true, additional information about the features will be shown
+#' @param extra If TRUE, additional information about the features will be shown
 #' @export
 showModule <- function(x, genes, module, mset="all", extra=TRUE) {
   mset <- .getmodules2(NULL, mset)
@@ -262,7 +263,7 @@ hgEnrichmentPlot <- function(fg, bg, m, mset="all", ...) {
 #' @param filter if TRUE, genes not defined in the module set will be removed
 #' @param unique if TRUE, duplicates will be removed
 #' @param add if TRUE, the plot will be added to the existing plot
-#' @param gene.labels a named character vector with gene labels to be shown (only if rug is plotted)
+#' @param gene.labels if TRUE, gene names are shown; alternatively, a named character vector with gene labels to be shown, or NULL (default) for no labels (option evaluated only if rug is plotted)
 #' @param gl.cex Text cex (magnification) for gene labels
 #' @param style "roc" for receiver-operator characteristic curve (default), and "gsea" for GSEA-style (Kaplan-Meier like plot)
 #' @param col a character vector color to be used
@@ -317,6 +318,13 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
 
   # check gene labels
   if(!is.null(gene.labels)) {
+
+    if(is.logical(gene.labels) && gene.labels) {
+      sel <- unlist(unique(lapply(m, function(mm) l[ l %in% mset$MODULES2GENES[[mm]] ])))
+      gene.labels <- sel
+      names(gene.labels) <- sel
+    }
+
     gene.labels <- unique(as.character(gene.labels))
     
     if(is.null(names(gene.labels))) {
@@ -411,3 +419,49 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
   }
 }
 
+
+
+#' Plot a PCA object returned by prcomp
+#'
+#' Plot a PCA object returned by prcomp
+#' @param pca PCA object returned by prcomp
+#' @param components a vector of length two indicating the components to plot
+#' @param pch Type of character to plot (default: 19)
+#' @param col Color for plotting (default: grey)
+#' @param group a factor determining shapes of the points to show (unless
+#'        overriden by pch=...)
+#' @param ... any further parameters will be passed to the plot() function
+#'        (e.g. col, cex, ...)
+#' @return If group is NULL, then NULL; else a data frame containing
+#'         colors and shapes matching each group
+#' @export
+pcaplot <- function(pca, components=1:2, group=NULL, col="black", pch=19, ...) {
+
+  args <- list(...)
+
+  x <- pca$x[, components[1]]
+  y <- pca$x[, components[2]]
+
+  if(!is.null(group)) {
+    group <- factor(group)
+    gr <- as.numeric(factor(group))
+    pch <- c(15:19)[ gr %% 5L ]
+    if(length(col) == 1L) col <- rep(col, length(x))
+  }
+
+  default.args <- list(pch=pch, xlim=range(x), ylim=range(y), bty="n", pch=pch, 
+    col=col,
+    xlab=paste("PC", components[1]), ylab=paste("PC", components[2]))
+  args <- c(args, default.args)
+  args <- c(list(x, y), args[unique(names(args))])
+  do.call(plot, args)
+
+  abline(h=0, col="grey")
+  abline(v=0, col="grey")
+
+  if(is.null(group)) return(NULL)
+
+  sel <- !duplicated(group)
+
+  return(list(groups=group[sel], pch=args$pch[sel], colors=args$col[sel]))
+}

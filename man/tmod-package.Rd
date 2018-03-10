@@ -14,4 +14,3 @@ to analyse and visualize the modules.
 \seealso{
 \code{\link{tmodHGtest}}, \code{\link{tmodUtest}}
 }
-

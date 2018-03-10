@@ -1,3 +1,174 @@
+## we need to use the tmod data set internally
+.myDataEnv <- new.env(parent=emptyenv())
+
+if(!exists("tmod", .myDataEnv)) {
+  data("tmod", package="tmod", envir=.myDataEnv)
+}
+
+.gettmod <- function() {
+  .myDataEnv[["tmod"]]
+}
+
+
+## check user provided mset for sanity
+.mset_sanity_check <- function(mset, modules=NULL) {
+
+  # sanity checks
+  if(!all( c( "MODULES", "MODULES2GENES", "GENES") %in% names(mset)))
+    stop("Required members missing from the list mset parameter")
+
+  for( i in c( "MODULES", "GENES" )) {
+    if(is.null(mset[[i]])) 
+      stop(sprintf("Member %s of mset is NULL", i))
+    if(!is(mset[[i]], "data.frame")) 
+      stop(sprintf("Member %s of mset is not a data frame", i))
+  }
+
+  if(!is(mset[["MODULES2GENES"]], "list"))
+    stop("Member MODULES2GENES of mset is not a list")
+
+  if(!all(c("ID", "Title") %in% colnames(mset[["MODULES"]])))
+    stop("Required columns missing from member MODULES")
+
+  if(any(duplicated(mset[["MODULES"]]$ID))) 
+    stop("Module IDs must not be duplicated")
+
+  mset[["MODULES"]]$ID <- as.character(mset[["MODULES"]]$ID)
+  rownames(mset[["MODULES"]]) <- mset[["MODULES"]]$ID
+
+  if(!"ID" %in% colnames(mset[["GENES"]]))
+    stop("Required column ID missing from member GENES")
+  mset[["GENES"]]$ID <- as.character(mset[["GENES"]]$ID)
+
+  missing <- !mset[["MODULES"]]$ID %in% names(mset[["MODULES2GENES"]])
+  if(any(missing)) {
+    stop(sprintf("Modules from MODULES member are missing in MODULES2GENES, first is %s", mset[["MODULES"]]$ID[missing][1] ))
+  }
+
+  if(!is.null(modules)) {
+
+    if(!all(modules %in% mset[["MODULES"]]$ID )) {
+      stop("Modules specified with the modules parameter are missing from definitions in the mset parameter")
+    }
+  }
+
+  if(!is(mset, "tmod")) mset <- new("tmod", mset)
+  mset
+}
+
+
+## prepare the modules set
+.getmodules2 <- function(modules=NULL, mset="all", known.only=FALSE, skipcheck=FALSE) {
+
+  # user provided mset
+  if(is(mset, "list")) {
+    mset <- .mset_sanity_check(mset, modules)
+    if(is.null(modules)) modules <- mset[["MODULES"]]$ID
+  } else {
+
+    tmod <- .gettmod()
+
+    mset <- match.arg( mset, c( "all", unique( tmod$MODULES$SourceID )) )
+    if( mset != "all" ) { 
+      if( is.null( modules ) ) modules <- tmod$MODULES$ID
+      modules <- modules[ tmod$MODULES[modules,]$SourceID == mset ]
+    }
+
+    mset <- tmod
+  }
+
+  # filter the modules if hand-picked
+  if(!is.null(modules)) {
+    mset <- mset[modules,]
+  }
+
+  if(known.only) {
+    mset <- mset[ ! is.na(mset$MODULES$Title) & ! mset$MODULES$Title %in% c( "TBA", "Undetermined"), ]
+  }
+
+  mset
+}
+
+
+#' Convert between matrix representation of modules and tmod objects 
+#'
+#' Converts a matrix where columns correspond to modules and rows to
+#' individual variables into an tmod object ("mset") represenation and back
+#'
+#' A matrix mapping genes onto modules and vice versa can be converted with
+#' mtx2mset into a tmod object. The numeric matrix either only contains '0'
+#' and '1' values indicating presence or absence of a variable (gene) in a module
+#' (gene set), or any other numbers which are treated as weights. In the latter case, '0' and only '0' is
+#' interpreted as absence of a variable in a module; any other value is
+#' interpreted as a weight and stored in the WEIGHTS slot of the tmod object.
+#' @seealso tmod-class
+#' @param x for mtx2mset, a numeric matrix with named rows and columns; for
+#'        mset2mtx, an object of the class tmod
+#' @export
+mtx2mset <- function(x) {
+
+  x <- x[ apply(x, 1, function(xx) any(xx > 0)),, drop=F ]
+
+  modules <- colnames(x)
+  genes   <- rownames(x)
+
+  if(is.null(modules))     stop("x must have row names")
+  if(is.null(genes))       stop("x must have column names")
+
+  genes2modules <- sapply(genes, function(g) modules[ x[g,] > 0 ], simplify=FALSE)
+  modules2genes <- sapply(modules, function(m) genes[ x[,m] > 0 ], simplify=FALSE)
+  weights <- NULL
+
+  if(!all(x %in% c(0,1))) {
+    weights <- sapply(modules, function(m) { 
+      print(m)
+      sel <- x[,m] > 0
+      ret <- x[sel,m]
+  }, simplify=FALSE)
+  }
+
+  modules <- data.frame(ID=modules, Title=modules, row.names=modules)
+  genes   <- data.frame(ID=genes, row.names=genes)
+
+  new( "tmod", list( 
+    MODULES=modules,
+    GENES=genes,
+    MODULES2GENES=modules2genes,
+    GENES2MODULES=genes2modules,
+    WEIGHTS=weights ))
+  
+
+}
+
+
+#' @rdname mtx2mset
+#' @export
+mset2mtx <- function(x) {
+
+  x <- .mset_sanity_check(x)
+
+  ng <- nrow(x$GENES)
+  nm <- nrow(x$MODULES)
+
+  ret <- matrix(0, nrow=ng, ncol=nm)
+  rownames(ret) <- x$GENES$ID
+  colnames(ret) <- x$MODULES$ID
+
+  if(!is.null(x$WEIGHTS)) {
+    for(m in x$MODULES$ID) {
+      sel <- x$MODULES2GENES[[m]]
+      ret[sel,m] <- x$WEIGHTS[[m]][sel]
+    }
+  } else {
+    for(m in x$MODULES$ID) {
+      ret[x$MODULES2GENES[[m]],m] <- 1
+    }
+  }
+
+  ret
+}
+
+
 ## checking a new tmod object
 check_tmod <- function(object) {
 
@@ -12,6 +183,12 @@ check_tmod <- function(object) {
 
   if(!all(object$MODULES$ID %in% names(object$MODULES2GENES)))
     return("All MODULES$ID must be found in names of MODULES2GENES")
+
+
+  if(!is.null(object$WEIGHTS)) {
+    if(!all(object$MODULES$ID %in% names(object$WEIGHTS)))
+      return("All MODULES$ID must be found in names of WEIGHTS")
+  }
 
   TRUE
 
@@ -90,14 +267,14 @@ makeTmod <- function(modules, modules2genes, genes2modules=NULL, genes=NULL) {
 #' See the package vignette for more on constructing custom module sets.
 #'
 #' @rdname tmod-class
-#' @importFrom methods setClass setMethod loadMethod is new
+#' @importFrom methods setClass setMethod loadMethod is new representation signature
 #' @seealso tmod-data
 #' @examples
 #' # A minimal example
 #' m <- data.frame(ID=letters[1:3], Title=LETTERS[1:3])
 #' m2g <- list(a=c("g1", "g2"), b=c("g3", "g4"), c=c("g1", "g2", "g4"))
 #' mymset <- makeTmod(modules=m, modules2genes=m2g)
-#' @export
+#' @exportClass tmod
 setClass( "tmod",
   representation("list"),
   validity=check_tmod
@@ -125,38 +302,42 @@ setMethod( "show", "tmod",
 
 #' Extracts parts of a tmod object
 #'
-#' @name [
 #' @param x a tmod object
 #' @param i indices specifying elements to extract or replace
 #' @aliases [,tmod-method
 #' @rdname extract-methods
-#' @docType methods
-
-setMethod("[", signature(x="tmod", i="ANY"),
+setMethod("[", c(x="tmod", i="ANY"),
 
   function(x, i) {
 
-  object  <- x
-  modules <- i
-  modules <- object$MODULES[ modules, "ID" ]
-  #modules <- modules[ modules %in% object$MODULES$ID ]
+    object  <- x
+    modules <- i
+    modules <- object$MODULES[ modules, "ID" ]
+    #modules <- modules[ modules %in% object$MODULES$ID ]
 
-  MODULES       <- object$MODULES[modules,,drop=FALSE]
-  MODULES2GENES <- object$MODULES2GENES[modules]
+    MODULES       <- object$MODULES[modules,,drop=FALSE]
+    MODULES2GENES <- object$MODULES2GENES[modules]
 
-  glist <- unique(unlist(MODULES2GENES))
+    glist <- unique(unlist(MODULES2GENES))
 
-  GENES <- object$GENES[ object$GENES$ID %in% glist,,drop=FALSE]
+    GENES <- object$GENES[ object$GENES$ID %in% glist,,drop=FALSE]
 
-  GENES2MODULES <- NULL
-  if(!is.null(object$GENES2MODULES)) {
-    GENES2MODULES <- object$GENES2MODULES[object$GENES$ID]
+    GENES2MODULES <- NULL
+    if(!is.null(object$GENES2MODULES)) {
+      GENES2MODULES <- object$GENES2MODULES[object$GENES$ID]
+    }
+
+    if(!is.null(object$WEIGHTS)) {
+      WEIGHTS <- object$WEIGHTS[modules]
+    } else {
+      WEIGHTS <- NULL
+    }
+
+    new( "tmod", list( 
+      MODULES=MODULES,
+      GENES=GENES,
+      MODULES2GENES=MODULES2GENES,
+      GENES2MODULES=GENES2MODULES,
+      WEIGHTS=WEIGHTS ))
   }
-
-  new( "tmod", list( 
-    MODULES=MODULES,
-    GENES=GENES,
-    MODULES2GENES=MODULES2GENES,
-    GENES2MODULES=GENES2MODULES ))
-
-})
+)

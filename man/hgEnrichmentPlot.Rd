@@ -35,4 +35,3 @@ hgEnrichmentPlot(fg, bg, "LI.M127")
 \seealso{
 \code{\link{tmod-package}}, \code{\link{evidencePlot}}
 }
-

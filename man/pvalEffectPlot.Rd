@@ -78,4 +78,3 @@ and color. Alternatively, a function may be specified with the parameter
 For the purposes of drawing a legend, the function must accept NULL
 p-value or a NULL enrichment parameter.
 }
-

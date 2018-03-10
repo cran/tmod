@@ -32,7 +32,7 @@ evidencePlot(l, m, mset = "all", scaled = TRUE, rug = TRUE, roc = TRUE,
 
 \item{col.rug}{a character value specifying the color of the rug}
 
-\item{gene.labels}{a named character vector with gene labels to be shown (only if rug is plotted)}
+\item{gene.labels}{if TRUE, gene names are shown; alternatively, a named character vector with gene labels to be shown, or NULL (default) for no labels (option evaluated only if rug is plotted)}
 
 \item{gl.cex}{Text cex (magnification) for gene labels}
 
@@ -70,4 +70,3 @@ evidencePlot(l, filter=TRUE, "LI.M127")
 \seealso{
 \code{\link{tmod-package}}, \code{\link{hgEnrichmentPlot}}
 }
-

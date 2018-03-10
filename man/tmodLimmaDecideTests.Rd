@@ -30,13 +30,6 @@ frame with the columns "Down", "Zero" and "Up" giving the number of the
 down-, not- and up-regulated genes respectively. Rows of the data frame
 correspond to module IDs. The object can directly be used in
 tmodPanelPlot as the pie parameter.
-library(limma)
-data(Egambia)
-design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-ret <- tmodLimmaTest(fit, Egambia$GENE_SYMBOL)
-pie <- tmodLimmaDecideTests(fit, Egambia$GENE_SYMBOL)
-tmodPanelPlot(ret, pie=pie)
 }
 \description{
 For each module in mset and for each coefficient in f$coefficients, this
@@ -51,7 +44,16 @@ of genes which are up- or down-regulated.
 In short, tmodLimmaDecideTests is the equivalent of tmodDecideTests, but
 for limma objects returned by eBayes().
 }
+\examples{
+data(Egambia)
+design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
+if(require(limma)) {
+  fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+  ret <- tmodLimmaTest(fit, Egambia$GENE_SYMBOL)
+  pie <- tmodLimmaDecideTests(fit, Egambia$GENE_SYMBOL)
+  tmodPanelPlot(ret, pie=pie)
+}
+}
 \seealso{
 tmodDecideTests, tmodLimmaTest, tmodPanelPlot
 }
-

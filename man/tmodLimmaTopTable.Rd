@@ -38,4 +38,3 @@ coefficient.
 \seealso{
 tmodLimmaTest
 }
-

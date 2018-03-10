@@ -57,4 +57,3 @@ head(res)
 \seealso{
 tmod-package
 }
-

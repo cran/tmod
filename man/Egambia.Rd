@@ -51,4 +51,3 @@ colnames( en2$E ) <- en2$targets$group
 Egambia <- cbind( en2$genes[ , c( "GENE_SYMBOL", "GENE_NAME", "EG" ) ], en2$E )
 }
 }
-

@@ -24,4 +24,3 @@ This function returns the selected modules from a module set.
 # show the interferon related modules
 getModuleMembers(c("LI.M127", "LI.M158.0", "LI.M158.0"))
 }
-

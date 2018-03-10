@@ -114,7 +114,6 @@ tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", 
 #' @param legend whether a legend should be shown
 #' @param ... Any further parameters passed to the tmod test function
 #' @importFrom tagcloud tagcloud strmultline smoothPalette
-#' @importFrom pca3d pca2d
 #' @return A list containing the calculated enrichments as well as the
 #' return value from the plotting function
 #' @examples
@@ -127,14 +126,14 @@ tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", 
 #'   components=4:3,
 #'   plot.params=list(group=group))
 #' @export
-tmodPCA <- function( pca, loadings=NULL, genes, 
+tmodPCA <- function(pca, loadings=NULL, genes, 
                      tmodfunc="tmodCERNOtest", 
-                     plotfunc=pca2d,
+                     plotfunc=pcaplot,
                      mode="simple", 
                      components=c(1,2), 
                      plot.params=NULL,
                      filter=TRUE, simplify=TRUE, 
-                     legend=FALSE, ... ) {
+                     legend=FALSE, ...) {
 
   mode <- match.arg( mode, c( "simple", "leftbottom", "cross" ) )
   tmodfunc <- match.arg(tmodfunc, c( "tmodCERNOtest", "tmodUtest" ))

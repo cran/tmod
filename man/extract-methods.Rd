@@ -2,10 +2,9 @@
 % Please edit documentation in R/classes.R
 \docType{methods}
 \name{show}
-\alias{[}
-\alias{[,tmod-method}
 \alias{show}
 \alias{show,tmod-method}
+\alias{[,tmod-method}
 \title{Shows the tmod object}
 \usage{
 \S4method{show}{tmod}(object)
@@ -24,4 +23,3 @@ Shows the tmod object
 
 Extracts parts of a tmod object
 }
-

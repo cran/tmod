@@ -1,96 +1,3 @@
-## we need to use the tmod data set internally
-.myDataEnv <- new.env(parent=emptyenv())
-
-if(!exists("tmod", .myDataEnv)) {
-  data("tmod", package="tmod", envir=.myDataEnv)
-}
-
-.gettmod <- function() {
-  .myDataEnv[["tmod"]]
-}
-
-
-## check user provided mset for sanity
-.mset_sanity_check <- function(mset, modules=NULL) {
-
-  # sanity checks
-  if(!all( c( "MODULES", "MODULES2GENES", "GENES") %in% names(mset)))
-    stop("Required members missing from the list mset parameter")
-
-  for( i in c( "MODULES", "GENES" )) {
-    if(is.null(mset[[i]])) 
-      stop(sprintf("Member %s of mset is NULL", i))
-    if(!is(mset[[i]], "data.frame")) 
-      stop(sprintf("Member %s of mset is not a data frame", i))
-  }
-
-  if(!is(mset[["MODULES2GENES"]], "list"))
-    stop("Member MODULES2GENES of mset is not a list")
-
-  if(!all(c("ID", "Title") %in% colnames(mset[["MODULES"]])))
-    stop("Required columns missing from member MODULES")
-
-  if(any(duplicated(mset[["MODULES"]]$ID))) 
-    stop("Module IDs must not be duplicated")
-
-  mset[["MODULES"]]$ID <- as.character(mset[["MODULES"]]$ID)
-  rownames(mset[["MODULES"]]) <- mset[["MODULES"]]$ID
-
-  if(!"ID" %in% colnames(mset[["GENES"]]))
-    stop("Required column ID missing from member GENES")
-  mset[["GENES"]]$ID <- as.character(mset[["GENES"]]$ID)
-
-  missing <- !mset[["MODULES"]]$ID %in% names(mset[["MODULES2GENES"]])
-  if(any(missing)) {
-    stop(sprintf("Modules from MODULES member are missing in MODULES2GENES, first is %s", mset[["MODULES"]]$ID[missing][1] ))
-  }
-
-  if(!is.null(modules)) {
-
-    if(!all(modules %in% mset[["MODULES"]]$ID )) {
-      stop("Modules specified with the modules parameter are missing from definitions in the mset parameter")
-    }
-  }
-
-  if(!is(mset, "tmod")) mset <- new("tmod", mset)
-  mset
-}
-
-
-## prepare the modules set
-.getmodules2 <- function(modules=NULL, mset="all", known.only=FALSE) {
-
-  # user provided mset
-  if(is(mset, "list")) {
-    mset <- .mset_sanity_check(mset, modules)
-    if(is.null(modules)) modules <- mset[["MODULES"]]$ID
-  } else {
-
-    tmod <- .gettmod()
-
-    mset <- match.arg( mset, c( "all", unique( tmod$MODULES$SourceID )) )
-    if( mset != "all" ) { 
-      if( is.null( modules ) ) modules <- tmod$MODULES$ID
-      modules <- modules[ tmod$MODULES[modules,]$SourceID == mset ]
-    }
-
-    mset <- tmod
-  }
-
-  # filter the modules if hand-picked
-  if(!is.null(modules)) {
-    mset <- mset[modules,]
-  }
-
-  if(known.only) {
-    mset <- mset[ ! is.na(mset$MODULES$Title) & ! mset$MODULES$Title %in% c( "TBA", "Undetermined"), ]
-  }
-
-  mset
-}
-
-
-
 ## this is the function that does the actual testing and concocting the
 ## results
 .tmodTest <- function( mod.test, post.test=NULL, qval= 0.05, order.by= "pval", mset=NULL, cols="Title"  ) {
@@ -128,7 +35,7 @@ if(!exists("tmod", .myDataEnv)) {
 #' Perform a statistical test of module expression
 #'
 #' Performs a test on either on an ordered list of genes (tmodUtest,
-#' tmodCERNOtest) or on two groups of genes (tmodHGtest).
+#' tmodCERNOtest, tmodZtest) or on two groups of genes (tmodHGtest).
 #' tmodUtest is a U test on ranks of genes that are contained in a module.
 #'
 #' tmodCERNOtest is also a nonparametric test working on gene ranks, but it
@@ -136,6 +43,22 @@ if(!exists("tmod", .myDataEnv)) {
 #' genes with lower ranks more, the resulting p-values better correspond to
 #' the observed effect size. In effect, modules with small effect but many
 #' genes get higher p-values than in case of the U-test.
+#'
+#' tmodZtest works very much like tmodCERNOtest, but instead of combining
+#' the rank-derived p-values using Fisher's method, it uses the Stouffer
+#' method (known also as the Z-transform test). 
+#'
+#' tmodWZtest is the weighted version of the tmodZtest. The weights can
+#' be provided as a named numeric vector (the "weights" parameter). In this case, the weights of any
+#' genes in the parameter l which are not in the names of "weights" are set to
+#' 0. These weights will be constant for a given gene in all modules.
+#' Alternatively, weights associated with the "mset" parameter (an object
+#' of class tmod) in the "WEIGHTS" member of the object (if present).
+#'
+#' For a discussion of the above three methods, read M. C. Whitlock,
+#' "Combining probability from independent tests: the weighted Z-method is
+#' superior to Fisher's approach", J. Evol. Biol. 2005 (doi:
+#' 10.1111/j.1420-9101.2005.00917.x) for further details.
 #'
 #' tmodHGtest is simply a hypergeometric test.
 #'
@@ -166,6 +89,7 @@ if(!exists("tmod", .myDataEnv)) {
 #' @param l sorted list of HGNC gene identifiers
 #' @param fg foreground gene set for the HG test
 #' @param bg background gene set for the HG test
+#' @param weights for tmodWZtest 
 #' @param modules optional list of modules for which to make the test
 #' @param qval Threshold FDR value to report
 #' @param order.by Order by P value ("pval") or none ("none")
@@ -184,12 +108,13 @@ if(!exists("tmod", .myDataEnv)) {
 #' ## Gene set enrichment in TB patients compared to 
 #' ## healthy controls (Egambia data set)
 #'
-#' library(limma)
 #' data(Egambia)
-#' design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-#' fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-#' tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
-#' tmodUtest(tt$GENE_SYMBOL)
+#'   design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
+#'   if(require(limma)) {
+#'   fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+#'   tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
+#'   tmodUtest(tt$GENE_SYMBOL)
+#' }
 #' @import stats
 #' @export
 tmodUtest <- function( l, modules=NULL, qval= 0.05, 
@@ -234,10 +159,9 @@ tmodUtest <- function( l, modules=NULL, qval= 0.05,
   }
   # homebrew U test; post.test function
   post.test <- function( ret ) {
-    if(useR) {
-      return(ret)
-    }
+    if(useR) return(ret)
 
+    # if useR is FALSE
     N1 <- ret$N1
     N2 <- N - ret$N1
     R1 <- ret$R1
@@ -257,8 +181,7 @@ tmodUtest <- function( l, modules=NULL, qval= 0.05,
 #' @name tmodUtest
 #' @export
 tmodCERNOtest <- function( l, modules=NULL, qval= 0.05, order.by= "pval", filter= FALSE, mset="LI", 
-  cols="Title",
-  useR=FALSE ) {
+  cols="Title") {
 
   # process mset parameter
   mset <- .getmodules2(modules, mset)
@@ -297,6 +220,125 @@ tmodCERNOtest <- function( l, modules=NULL, qval= 0.05, order.by= "pval", filter
     ret$P.Value= pchisq(ret$cerno, 2*ret$N1, lower.tail=FALSE)
     ret
   }
+
+  ret <- .tmodTest( mod.test, post.test, qval=qval, order.by=order.by, mset=mset, cols=cols )
+  ret
+}
+
+#' @name tmodUtest
+#' @export
+tmodZtest <- function( l, modules=NULL, qval= 0.05, order.by= "pval", filter= FALSE, mset="LI", 
+  cols="Title") {
+
+  # process mset parameter
+  mset <- .getmodules2(modules, mset)
+
+  # prepare the variables specific to that test
+  l <- as.character( unique( l ) )
+
+  if( sum( l %in% mset$GENES$ID ) == 0 ) {
+    warning( "No genes in l match genes in GENES" )
+    return(NULL)
+  }
+
+  if( filter ) l <- l[ l %in% mset$GENES$ID ]
+  N <- length( l )
+
+  # set up the test function
+  mod.test <- function( m ) {
+    x <- l %in% mset$MODULES2GENES[[m]]
+    N1 <- sum(x)
+
+    ranks <- c(1:N)[x]
+    pvals <- ranks/N
+    ret <- c(z=sum(qnorm(pvals)), N1=N1, R1=sum(ranks), P.Value=1)
+    ret
+  }
+
+  post.test <- function(ret) {
+    ret <- data.frame(ret, stringsAsFactors=FALSE)
+    N1 <- ret$N1
+    N2 <- N - N1
+    R1 <- ret$R1
+    U  <- N1*N2+N1*(N1+1)/2-R1
+    ret$AUC <- U/(N1*N2)
+    ret$z <- ret$z / sqrt(ret$N1)
+    ret <- ret[ , c( "z", "N1", "AUC" ) ]
+    ret$P.Value=pnorm(ret$z)
+    ret$P.Value[is.nan(ret$P.Value)] <- 1
+    ret
+  }
+
+
+  ret <- .tmodTest( mod.test, post.test, qval=qval, order.by=order.by, mset=mset, cols=cols )
+  ret
+}
+
+
+
+#' @name tmodUtest
+#' @export
+tmodWZtest <- function( l, modules=NULL, weights=NULL, qval= 0.05, order.by= "pval", filter= FALSE, mset="LI", 
+  cols="Title") {
+
+  # process mset parameter
+  mset <- .getmodules2(modules, mset)
+
+  if(is.null(weights) && is.null(mset$WEIGHTS)) 
+    stop("If no weights are found in mset, the weights parameter must not be NULL")
+
+  # prepare the variables specific to that test
+  l <- as.character( unique( l ) )
+
+  if( sum( l %in% mset$GENES$ID ) == 0 ) {
+    warning( "No genes in l match genes in GENES" )
+    return(NULL)
+  }
+
+  if( filter ) l <- l[ l %in% mset$GENES$ID ]
+  N <- length( l )
+
+  if(!is.null(weights)) {
+    ww <- rep(0, N)
+    names(ww) <- l
+    weights <- weights[names(weights) %in% l]
+    ww[names(weights)] <- weights
+    weights <- ww
+  }
+
+
+  # set up the test function
+  mod.test <- function( m ) {
+    x <- l %in% mset$MODULES2GENES[[m]]
+    N1 <- sum(x)
+
+    ranks <- c(1:N)[x]
+    pvals <- ranks/N
+    if(is.null(weights)) {
+      w <- mset$WEIGHTS[[m]][ l[x] ]
+    } else {
+      w <- weights[l[x]]
+    }
+    print(w)
+    z <- sum(qnorm(pvals) * w)/ sqrt(sum(w^2))
+    print(z)
+    ret <- c(z=z, N1=N1, R1=sum(ranks), P.Value=1)
+    ret
+  }
+
+  post.test <- function(ret) {
+    ret <- data.frame(ret, stringsAsFactors=FALSE)
+    N1 <- ret$N1
+    N2 <- N - N1
+    R1 <- ret$R1
+    U  <- N1*N2+N1*(N1+1)/2-R1
+    ret$AUC <- U/(N1*N2)
+    ret <- ret[ , c( "z", "N1", "AUC" ) ]
+    ret$P.Value=pnorm(ret$z)
+    ret$P.Value[is.nan(ret$P.Value)] <- 1
+    ret
+  }
+
 
   ret <- .tmodTest( mod.test, post.test, qval=qval, order.by=order.by, mset=mset, cols=cols )
   ret

@@ -1,6 +1,6 @@
 #' Run tmod enrichment tests directly on a limma object
 #'
-#' This function will order the genes according to each of the coefficient
+#' Order the genes according to each of the coefficient
 #' found in a limma object and run an enrichment test on the ordered list.
 #'
 #' For each coefficient in the fit returned by the eBayes / lmFit functions
@@ -22,23 +22,24 @@
 #' @param genes Either the name of the column in f$genes which
 #' contains the gene symbols corresponding to the gene set collection used, or
 #' a character vector with gene symbols
-#' @param order.by How the gene names should be ordered: "msd" (default), "pval" or "lfc"
+#' @param sort.by How the gene names should be ordered: "msd" (default), "pval" or "lfc"
 #' @param tmodFunc The function to run the enrichment tests. Either tmodCERNOtest or tmodUtest
 #' @param coef If not NULL, only run tmod on these coefficients
 #' @param ... Further parameters passed to the tmod test function
 #' @examples
-#' library(limma)
 #' data(Egambia)
 #' design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-#' fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-#' ret <- tmodLimmaTest(fit, genes=Egambia$GENE_SYMBOL)
-#' tmodSummary(ret)
-#' tmodPanelPlot(ret)
+#' if(require(limma)) {
+#'   fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+#'   ret <- tmodLimmaTest(fit, genes=Egambia$GENE_SYMBOL)
+#'   tmodSummary(ret)
+#'   tmodPanelPlot(ret)
+#' }
 #' @seealso tmodCERNOtest, tmodUtest, tmodPlotPanel, tmodSummary
 #' @export
 tmodLimmaTest <- function(f,
   genes,
-  order.by="msd",
+  sort.by="msd",
   tmodFunc=tmodCERNOtest,
   coef=NULL,
   ...
@@ -68,7 +69,7 @@ tmodLimmaTest <- function(f,
   }
 
   # calculate MSD
-  if(order.by == "msd") {
+  if(sort.by == "msd") {
     if(!all(c("s2.post", "stdev.unscaled", "df.total") %in% names(f)))
       stop("Incorrect f object, did you use eBayes?")
 
@@ -78,7 +79,7 @@ tmodLimmaTest <- function(f,
 
   # define the test function
   tmodCoefTest <- function(cn) {
-    ord <- switch( order.by, 
+    ord <- switch( sort.by, 
       msd=order(msd[,cn], decreasing=TRUE),
       lfc=order(abs(f$coefficients[,cn]), decreasing=TRUE),
       pval=order(f$p.value[,cn]))
@@ -186,13 +187,15 @@ tmodLimmaTopTable <- function(f, genelist=NULL, coef=NULL,
 #' down-, not- and up-regulated genes respectively. Rows of the data frame
 #' correspond to module IDs. The object can directly be used in
 #' tmodPanelPlot as the pie parameter.
-#' library(limma)
+#' @examples
 #' data(Egambia)
 #' design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-#' fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-#' ret <- tmodLimmaTest(fit, Egambia$GENE_SYMBOL)
-#' pie <- tmodLimmaDecideTests(fit, Egambia$GENE_SYMBOL)
-#' tmodPanelPlot(ret, pie=pie)
+#' if(require(limma)) {
+#'   fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+#'   ret <- tmodLimmaTest(fit, Egambia$GENE_SYMBOL)
+#'   pie <- tmodLimmaDecideTests(fit, Egambia$GENE_SYMBOL)
+#'   tmodPanelPlot(ret, pie=pie)
+#' }
 #' @seealso tmodDecideTests, tmodLimmaTest, tmodPanelPlot
 #' @export
 tmodLimmaDecideTests <- function(f, genes, lfc.thr=0.5, pval.thr=0.05, 

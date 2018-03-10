@@ -53,4 +53,3 @@ be corrected.
 \seealso{
 tmodSummary, tmodPanelPlot, tmodDecideTestsLimma
 }
-

@@ -38,4 +38,3 @@ tuberculosis patients." PloS one 7.7 (2012): e40221.
 \seealso{
 tmod-data
 }
-

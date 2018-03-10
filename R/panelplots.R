@@ -280,9 +280,13 @@ pvalEffectPlot <- function(e, p,
    
   # ---------------------------------------
   # initializations
+  grid <- match.arg(grid, c("none", "at", "between"))
+
   me <- e ; mq <- -log10(p)
 
-  grid <- match.arg(grid, c("none", "at", "between"))
+  Nc <- ncol(me) ; Nr <- nrow(me)
+  if(Nc == 0 || Nr == 0) stop("Nothing to plot")
+
 
   min.p <- -log10(pval.thr)
   max.p <- -log10(pval.cutoff)
@@ -290,10 +294,8 @@ pvalEffectPlot <- function(e, p,
   min.e <- min(me)
   max.e <- max(me)
 
-  Nc <- ncol(me) ; Nr <- nrow(me)
-
-  if(is.null(row.labels)) row.labels <- 1:Nr
-  if(is.null(col.labels)) col.labels <- 1:Nc
+  if(is.null(row.labels) || length(row.labels) != Nr) row.labels <- 1:Nr
+  if(is.null(col.labels) || length(col.labels) != Nc) col.labels <- 1:Nc
 
   col.labels.style <- match.arg( col.labels.style, c( "top", "bottom", "both", "none" ) )
   if(length(text.cex) == 1) text.cex <- rep(text.cex, 3)
@@ -382,7 +384,7 @@ pvalEffectPlot <- function(e, p,
   }
 
   # plot the labels
-  text( rownwd + colnwd * 0.5, rev(y.vec), row.labels, pos=2, cex=text.cex[1] )
+  text(rownwd + colnwd * 0.5, rev(y.vec), row.labels, pos=2, cex=text.cex[1] )
 
   # column labels
   if(col.labels.style %in% c("both", "top")) {
@@ -473,8 +475,10 @@ pvalEffectPlot <- function(e, p,
 #' @param filter.empty.rows If TRUE, all modules (rows) with no enrichment below pval.thr in any column will be removed
 #' @param filter.unknown If TRUE, modules with no annotation will be omitted
 #' @param filter.rows.pval Rows in which no p value is below this threshold will be omitted
+#' @param filter.rows.auc Rows in which no AUC value is above this threshold will be omitted
 #' @param filter.by.id if provided, show only modules with IDs in this character vector
 #' @param pval.thr Results with p-value above pval.thr will not be shown
+#' @param pval.thr.lower Results with p-value below pval.thr.lower will look identical on the plot
 #' @param col.labels Labels for the columns. If NULL, names of the elements
 #' of the list x will be used.
 #' @param row.labels Labels for the modules. This must be a named vector, with module IDs as vector names. If NULL, module titles from
@@ -517,12 +521,14 @@ pvalEffectPlot <- function(e, p,
 tmodPanelPlot <- function(x, pie=NULL, clust="qval", 
   filter.empty.cols=FALSE, filter.empty.rows=TRUE, filter.unknown=TRUE,
   filter.rows.pval=0.05,
+  filter.rows.auc=0.5,
   filter.by.id=NULL,
   col.labels=NULL, 
   col.labels.style="top",
   row.labels=NULL, 
   row.labels.auto="both",
   pval.thr=10^-2,
+  pval.thr.lower=10^-6,
   plot.func=NULL,
   grid="at", 
   pie.colors=c("#0000FF", "#cccccc", "#FF0000" ),
@@ -561,13 +567,14 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   }
 
   min.p <- -log10(pval.thr)
-  max.p <- 6
+  max.p <- -log10(pval.thr.lower)
 
   # calculate q and e matrices
   m <- as.matrix(df[,-c(1:2),drop=FALSE])
   Nc <- ncol(m)/2
   Nr <- nrow(m)
 
+  # split the matrix in two
   me <- m[,(1:Nc)*2-1,drop=FALSE]
   me[is.na(me)] <- 0.5
 
@@ -578,9 +585,16 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   # ----- FILTERING ------------
   row.ids <- df$ID
 
-  # remove rows with no pval below filter.rows.pval
+  # remove rows with no at least one pval below filter.rows.pval
   minps <- apply(mq, 1, max)
   sel   <- minps > -log10(filter.rows.pval)
+
+  # remove rows with at least one AUC above filter.rows.auc
+  maxaucs <- apply(me, 1, max)
+  sel     <- sel & maxaucs >= filter.rows.auc
+
+  if(sum(!sel) == nrow(mq)) stop("No rows remain after filtering")
+
   mq    <- mq[sel,,drop=F]
   me    <- me[sel,,drop=F]
   row.labels <- row.labels[sel]

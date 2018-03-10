@@ -1,4 +1,4 @@
-## ----setup, cache=FALSE, echo=FALSE, results="hide", include=FALSE-------
+## ----setup, echo=FALSE, results="hide", include=FALSE--------------------
 library(knitr)
 opts_chunk$set(cache=FALSE, autodep=TRUE, tidy=FALSE, fig.width=5, warning=FALSE, fig.height=5)
 opts_knit$set(width=75)
@@ -117,21 +117,20 @@ res2 <- tmodUtest(l, mset="all")
 head( res2 )
 
 ## ----six,fig=TRUE,fig.width=8,fig.height=5-------------------------------
-library(pca3d)
 mypal <- c("#E69F00", "#56B4E9")
 pca <- prcomp(t(E), scale.=TRUE)
+
+col <- mypal[ factor(group) ]
 par(mfrow=c(1, 2))
-l<-pca2d(pca, group=group, 
-  palette=mypal)
-cols <- as.character(l$colors)
+l<-pcaplot(pca, group=group, col=col)
+ 
 legend("topleft", as.character(l$groups),
-       pch=l$shapes,
-       col=cols, bty="n")
-l<-pca2d(pca, group=group, components=3:4,
-  palette=mypal)
+       pch=l$pch,
+       col=l$colors, bty="n")
+l<-pcaplot(pca, group=group, col=col, components=3:4)
 legend("topleft", as.character(l$groups),
-       pch=l$shapes,
-       col=cols, bty="n")
+       pch=l$pch,
+       col=l$colors, bty="n")
 
 ## ----seven---------------------------------------------------------------
 o <- order(abs(pca$rotation[,4]), decreasing=TRUE)
@@ -174,14 +173,17 @@ l3 <- Egambia$GENE_SYMBOL[o3]
 res3 <- tmodUtest(l3)
 layout(matrix(c(3,1,0,2),2,2,byrow=TRUE),
   widths=c(1/3, 2/3), heights=c(2/3, 1/3))
+col <- mypal[ factor(group) ]
+
 # note -- PC4 is now x axis!!
-l<-pca2d(pca, group=group, components=4:3,
-  palette=mypal, radius=1.8)
-cols <- as.character(l$colors)
+l <- pcaplot(pca, group=group, components=4:3,
+  col=col, cex=1.8)
+
 legend("topleft", 
   as.character(l$groups),
-  pch=l$shapes,
-  col=cols, bty="n")
+  pch=l$pch,
+  col=l$colors, bty="n")
+
 tagcloud(tags, weights=w, col=c, fvert= 0)
 tagcloud(strmultline(res3$Title),
   weights=-log10(res3$P.Value),
@@ -193,7 +195,7 @@ tmodPCA(pca,
   genes=Egambia$GENE_SYMBOL, 
   components=3:4,
   plot.params=list(group=group,
-  palette=mypal
+  col=col
   ))
 
 ## ----nineC---------------------------------------------------------------
@@ -206,6 +208,11 @@ plotf <- function(pca, components) {
 }
 ret <- tmodPCA(pca, genes=Egambia$GENE_SYMBOL, 
   components=3:4, plotfunc=plotf)
+
+## ----nineD---------------------------------------------------------------
+if(require(pca3d)) plotf <- pca2d
+ret <- tmodPCA(pca, genes=Egambia$GENE_SYMBOL, 
+  components=3:4, plotfunc=plotf, plot.params=list(group=group))
 
 ## ----perm1,fig=FALSE-----------------------------------------------------
 permset <- function(data, design) {
@@ -315,51 +322,6 @@ mymset
 #  names(m2g) <- modules$ID
 #  
 #  msig <- makeTmod(modules=modules, modules2genes=m2g)
-
-## ----wpex1---------------------------------------------------------------
-human <- tempfile()
-download.file( 
-  "http://www.wikipathways.org//wpi/batchDownload.php?species=Homo%20sapiens&fileType=txt", 
-  destfile=human, mode="wb")
-files <- unzip(human, list=T)
-
-files$ID    <- gsub( ".*_(WP[0-9]*)_.*", "\\1", files$Name )
-files$Title <- gsub( "(.*)_WP[0-9]*_.*", "\\1", files$Name )
-
-## ----wpex2---------------------------------------------------------------
-suppressMessages(library(org.Hs.eg.db))
-p2GENES <- sapply( files$Name, function(fn) {
-  foo <- read.csv( unz( human, 
-  filename= fn ), sep="\t" )
-  ids <- foo$Identifier[ foo$Identifier %in% ls( org.Hs.egSYMBOL ) ]
-  unique(unlist(mget(as.character(ids), org.Hs.egSYMBOL)))
-})
-
-names(p2GENES) <- files$ID
-
-## ----wpex3---------------------------------------------------------------
-pathways <- data.frame( ID=files$ID, 
-  Title=files$Title,
-  stringsAsFactors=FALSE )
-pathways$N <- sapply(p2GENES, length)
-pathways$URL <- 
-  paste0("http://www.wikipathways.org/index.php/Pathway:",
-  pathways$ID )
-sel <- pathways$N > 4
-pathways <- pathways[ sel, ]
-rownames(pathways) <- pathways$ID
-
-## ----wpex4---------------------------------------------------------------
-Hspaths <- makeTmod(modules=pathways, modules2genes=p2GENES)
-
-## ----wpex5---------------------------------------------------------------
-tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths)
-
-## ----wpex6---------------------------------------------------------------
-sel <- grep( "Interferon", 
-  Hspaths$MODULES$Title, ignore.case=T )
-tmodCERNOtest(tt$GENE_SYMBOL, mset=Hspaths, 
-  modules=Hspaths$MODULES$ID[sel]) 
 
 ## ----metabodata----------------------------------------------------------
 data(modmetabo) ## modules

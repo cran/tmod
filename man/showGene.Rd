@@ -36,4 +36,3 @@ data(Egambia)
 E <- as.matrix(Egambia[,-c(1:3)])
 showGene(E["20799",], rep(c("CTRL", "TB"), each=15))
 }
-

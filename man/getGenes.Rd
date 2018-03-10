@@ -27,4 +27,3 @@ genes. If genelist is provided, then only genes in that list will be
 shown. An optional column, "fg" informs which genes are in the "foreground"
 data set.
 }
-

@@ -15,7 +15,10 @@ showModule(x, genes, module, mset = "all", extra = TRUE)
 
 \item{mset}{Module set to use; see "tmodUtest" for details}
 
-\item{extra}{If true, additional information about the features will be shown}
+\item{extra}{If TRUE, additional information about the features will be shown}
+}
+\value{
+Either a filtered vector or (if extra==TRUE) a data frame.
 }
 \description{
 Select genes belonging to a module from a data frame or vector
@@ -26,4 +29,3 @@ shown. Use it, for example, to show a subset of topTable result from
 limma in order to see which genes from a module are significantly
 regulated. In essence, this is just a wrapper around "subset()".
 }
-

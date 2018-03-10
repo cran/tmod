@@ -49,4 +49,3 @@ tmodSummary(x)
 \seealso{
 tmodPanelPlot
 }
-
