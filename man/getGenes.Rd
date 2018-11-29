@@ -4,7 +4,8 @@
 \alias{getGenes}
 \title{Get genes belonging to a module}
 \usage{
-getGenes(modules, genelist = NULL, fg = NULL, mset = "LI")
+getGenes(modules, genelist = NULL, fg = NULL, mset = "LI",
+  as.list = FALSE)
 }
 \arguments{
 \item{modules}{module IDs}
@@ -14,9 +15,12 @@ getGenes(modules, genelist = NULL, fg = NULL, mset = "LI")
 \item{fg}{genes which are in the foreground set}
 
 \item{mset}{module set to use}
+
+\item{as.list}{should a list of genes rather than a data frame be returned}
 }
 \value{
-data frame containing module to gene mapping
+data frame containing module to gene mapping, or a list (if
+as.list == TRUE
 }
 \description{
 Get genes belonging to a module

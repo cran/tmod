@@ -4,8 +4,8 @@
 \alias{pcaplot}
 \title{Plot a PCA object returned by prcomp}
 \usage{
-pcaplot(pca, components = 1:2, group = NULL, col = "black", pch = 19,
-  ...)
+pcaplot(pca, components = 1:2, group = NULL, col = "black",
+  pch = 19, ...)
 }
 \arguments{
 \item{pca}{PCA object returned by prcomp}

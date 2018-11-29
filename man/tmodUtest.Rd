@@ -2,21 +2,27 @@
 % Please edit documentation in R/statisticaltests.R
 \name{tmodUtest}
 \alias{tmodUtest}
-\alias{tmodUtest}
+\alias{tmodGeneSetTest}
 \alias{tmodCERNOtest}
-\alias{tmodUtest}
+\alias{tmodPLAGEtest}
 \alias{tmodZtest}
-\alias{tmodUtest}
 \alias{tmodWZtest}
-\alias{tmodUtest}
 \alias{tmodHGtest}
 \title{Perform a statistical test of module expression}
 \usage{
 tmodUtest(l, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title", useR = FALSE)
+  filter = FALSE, mset = "LI", cols = "Title", useR = FALSE,
+  nodups = TRUE)
+
+tmodGeneSetTest(l, x, modules = NULL, qval = 0.05, order.by = "pval",
+  filter = FALSE, mset = "LI", cols = "Title", Nsim = 1000,
+  nodups = TRUE)
 
 tmodCERNOtest(l, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title")
+  filter = FALSE, mset = "LI", cols = "Title", nodups = TRUE)
+
+tmodPLAGEtest(l, x, group, modules = NULL, qval = 0.05,
+  order.by = "pval", mset = "LI", cols = "Title", nodups = TRUE)
 
 tmodZtest(l, modules = NULL, qval = 0.05, order.by = "pval",
   filter = FALSE, mset = "LI", cols = "Title")
@@ -25,7 +31,7 @@ tmodWZtest(l, modules = NULL, weights = NULL, qval = 0.05,
   order.by = "pval", filter = FALSE, mset = "LI", cols = "Title")
 
 tmodHGtest(fg, bg, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title")
+  filter = FALSE, mset = "LI", cols = "Title", nodups = TRUE)
 }
 \arguments{
 \item{l}{sorted list of HGNC gene identifiers}
@@ -43,6 +49,15 @@ tmodHGtest(fg, bg, modules = NULL, qval = 0.05, order.by = "pval",
 \item{cols}{Which columns from the MODULES data frame should be included in resulsts}
 
 \item{useR}{use the R \code{wilcox.test} function; slow, but with exact p-values for small samples}
+
+\item{nodups}{Remove duplicate gene names in l and corresponding
+rows from ranks}
+
+\item{x}{Expression matrix for the tmodPLAGEtest; a vector for tmodGeneSetTest}
+
+\item{Nsim}{for tmodGeneSetTest, number of replicates for the randomization test}
+
+\item{group}{group assignments for the tmodPLAGEtest}
 
 \item{weights}{for tmodWZtest}
 
@@ -69,16 +84,19 @@ genes with lower ranks more, the resulting p-values better correspond to
 the observed effect size. In effect, modules with small effect but many
 genes get higher p-values than in case of the U-test.
 
+tmodPLAGEtest is based on the PLAGE, "Pathway level analysis of gene
+expression" published by Tomfohr, Lu and Kepler (2005), doi 10.1186/1471-2105-6-225.
+In essence it is just a t-test run on module eigengenes, but it
+performs really well. This approach can be used with any complex linear
+model; for this, use the function eigengene(). See users guide for details.
+
 tmodZtest works very much like tmodCERNOtest, but instead of combining
 the rank-derived p-values using Fisher's method, it uses the Stouffer
 method (known also as the Z-transform test).
 
-tmodWZtest is the weighted version of the tmodZtest. The weights can
-be provided as a named numeric vector (the "weights" parameter). In this case, the weights of any
-genes in the parameter l which are not in the names of "weights" are set to
-0. These weights will be constant for a given gene in all modules.
-Alternatively, weights associated with the "mset" parameter (an object
-of class tmod) in the "WEIGHTS" member of the object (if present).
+tmodGeneSetTest is an implementation of the function geneSetTest from
+the limma package (note that tmodUtest is equivalent to the limma's
+wilcoxGST function).
 
 For a discussion of the above three methods, read M. C. Whitlock,
 "Combining probability from independent tests: the weighted Z-method is

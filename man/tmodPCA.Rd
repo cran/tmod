@@ -6,8 +6,8 @@
 \usage{
 tmodPCA(pca, loadings = NULL, genes, tmodfunc = "tmodCERNOtest",
   plotfunc = pcaplot, mode = "simple", components = c(1, 2),
-  plot.params = NULL, filter = TRUE, simplify = TRUE, legend = FALSE,
-  ...)
+  plot.params = NULL, filter = TRUE, simplify = TRUE,
+  legend = FALSE, ...)
 }
 \arguments{
 \item{pca}{Object returned by prcomp or a matrix of PCA coordinates. In the latter case, a

@@ -24,6 +24,8 @@ and '1' values indicating presence or absence of a variable (gene) in a module
 (gene set), or any other numbers which are treated as weights. In the latter case, '0' and only '0' is
 interpreted as absence of a variable in a module; any other value is
 interpreted as a weight and stored in the WEIGHTS slot of the tmod object.
+
+The mset2mtx function does the reverse.
 }
 \seealso{
 tmod-class

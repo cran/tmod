@@ -5,7 +5,8 @@
 \title{Count the Up- or Down-regulated genes per module}
 \usage{
 tmodDecideTests(g, lfc = NULL, pval = NULL, lfc.thr = 0.5,
-  pval.thr = 0.05, labels = NULL, filter.unknown = FALSE, mset = "all")
+  pval.thr = 0.05, labels = NULL, filter.unknown = FALSE,
+  mset = "all")
 }
 \arguments{
 \item{g}{a character vector with gene symbols}

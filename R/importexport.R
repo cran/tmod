@@ -2,11 +2,14 @@
 .importMsigDBXML <- function(file, fields, organism) {
   msig <- list()
 
+  fields <- unique(c("SYSTEMATIC_NAME", "STANDARD_NAME", "CATEGORY_CODE", "SUB_CATEGORY_CODE", fields))
+  field.names <- c( "ID", "Title", "Category", "Subcategory", fields[-c(1:4)] )
+
   foo <- xmlParse(file)
   foo <- xmlToList(foo)
   
-  orgs <- sapply(foo, function(x) x["ORGANISM"])
   if(organism != "all") {
+    orgs <- sapply(foo, function(x) x["ORGANISM"])
     foo <- foo[ orgs == organism ]
   }
 
@@ -14,9 +17,9 @@
   foo <- foo[ ! sapply(foo, is.null) ]
 
   msig$MODULES <- t(sapply(foo,
-    function(x) x[ c("SYSTEMATIC_NAME", "STANDARD_NAME", "CATEGORY_CODE", "SUB_CATEGORY_CODE") ]))
-  colnames(msig$MODULES) <- c( "ID", "Title", "Category", "Subcategory" )
-  msig$MODULES <- data.frame(msig$MODULES, stringsAsFactors=FALSE)
+    function(x) x[ fields ]))
+  colnames(msig$MODULES) <- field.names
+  msig$MODULES <- data.frame(msig$MODULES, stringsAsFactors=FALSE, row.names=NULL)
 
   if(any(duplicated(msig$MODULES$ID))) {
     warning("Duplicated IDs found; automatic IDs will be generated")
@@ -27,6 +30,7 @@
   rownames(msig$MODULES) <- msig$MODULES[,"ID"]
 
   msig$MODULES2GENES <- lapply(foo, function(x) strsplit( x["MEMBERS_SYMBOLIZED"], "," )[[1]])
+
   names(msig$MODULES2GENES) <- msig$MODULES$ID
   msig$GENES <- data.frame( ID=unique(unlist(msig$MODULES2GENES)))
 
@@ -87,7 +91,7 @@
 #' @export
 
 tmodImportMSigDB <- function( file=NULL, format="xml", organism="Homo sapiens",
-  fields=c( "STANDARD_NAME", "CATEGORY_CODE", "SUBCATEGORY_CODE") ) {
+  fields=c( "STANDARD_NAME", "CATEGORY_CODE", "SUB_CATEGORY_CODE", "EXTERNAL_DETAILS_URL") ) {
 
   if(length(file) != 1) stop("Incorrect file parameter")
   if(!file.exists(file)) stop( sprintf("File %s does not exist", file))
@@ -105,3 +109,5 @@ tmodImportMSigDB <- function( file=NULL, format="xml", organism="Homo sapiens",
   msig$MODULES$B <- sapply(msig$MODULES2GENES, length)
   msig
 }
+
+

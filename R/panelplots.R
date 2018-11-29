@@ -157,18 +157,15 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
   if(!is(x, "list")) stop( "x must be a list object")
 
   rid <- names(x)
-  if(is.null(rid)) rid <- paste0("X.", 1:length(x))
+  if(is.null(rid)) {
+    rid <- paste0("X.", 1:length(x))
+    names(x) <- rid
+  }
 
   all.mods <- sort(unique(unlist(lapply(x, function(xx) xx$ID))))
 
   ret <- data.frame( ID=all.mods, Title=NA, stringsAsFactors=FALSE)
   rownames(ret) <- ret$ID
-
-  if("AUC" %in% colnames(x[[1]])) {
-    effect.col <- "AUC"
-  } else {
-    effect.col <- "U"
-  }
 
 
   # collect the Title, effect and q-value information
@@ -180,6 +177,10 @@ tmodSummary <- function(x, clust=NULL, filter.empty=FALSE, filter.unknown=TRUE) 
     if(filter.empty && nrow(x[[n]]) == 0) next ;
     sel <- all.mods %in% x[[n]]$ID
     mm  <- match(all.mods[sel], x[[n]]$ID)
+
+    ## select the effect size column - depending on the test type
+    effect.col <- which(colnames(x[[n]]) %in% c("AUC", "E"))[1]
+    effect.col <- colnames(x[[n]])[effect.col]
 
     ret[sel,"Title"] <- x[[n]][mm,]$Title
     an <- paste0(effect.col, ".", n)
@@ -318,7 +319,7 @@ pvalEffectPlot <- function(e, p,
   # ---------------------------------------
   # plotting
   plot.new()
-  oldpar <- par(mar=rep(1,4), usr=c(0,1,0,1))
+  oldpar <- par(mar=rep(1,4), usr=rep(c(-0.04, 1.04), 2), xpd=NA)
   on.exit(par(oldpar))
 
   # ---------------------------------------
@@ -533,7 +534,7 @@ tmodPanelPlot <- function(x, pie=NULL, clust="qval",
   grid="at", 
   pie.colors=c("#0000FF", "#cccccc", "#FF0000" ),
   plot.cex=1, text.cex=1, 
-  pie.style="pie", 
+  pie.style="rug", 
   legend.style="auto", ... ) {
 
   x <- .xcheck(x)

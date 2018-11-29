@@ -4,7 +4,8 @@
 \alias{tmodSummary}
 \title{Create a summary of multiple tmod analyses}
 \usage{
-tmodSummary(x, clust = NULL, filter.empty = FALSE, filter.unknown = TRUE)
+tmodSummary(x, clust = NULL, filter.empty = FALSE,
+  filter.unknown = TRUE)
 }
 \arguments{
 \item{x}{list, in which each element has been generated with a tmod test function}

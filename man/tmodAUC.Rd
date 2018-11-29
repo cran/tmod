@@ -4,8 +4,9 @@
 \alias{tmodAUC}
 \title{Calculate AUC}
 \usage{
-tmodAUC(l, ranks, modules = NULL, stat = "AUC", remove.dups = TRUE,
-  recalculate.ranks = TRUE, filter = FALSE, mset = "LI")
+tmodAUC(l, ranks, modules = NULL, stat = "AUC",
+  recalculate.ranks = TRUE, filter = FALSE, mset = "LI",
+  nodups = TRUE)
 }
 \arguments{
 \item{l}{List of gene names corresponding to rows from the ranks matrix}
@@ -17,9 +18,6 @@ and rows to genes from the l list}
 
 \item{stat}{Which statistics to generate. Default: AUC}
 
-\item{remove.dups}{Remove duplicate gene names in l and corresponding
-rows from ranks}
-
 \item{recalculate.ranks}{Filtering and removing duplicates will also
 remove ranks, so that they should be recalculated. Use FALSE if you don't
 want this behavior. If unsure, stay with TRUE}
@@ -27,6 +25,9 @@ want this behavior. If unsure, stay with TRUE}
 \item{filter}{Remove gene names which have no module assignments}
 
 \item{mset}{Which module set to use. "LI", "DC" or "all" (default: LI)}
+
+\item{nodups}{Remove duplicate gene names in l and corresponding
+rows from ranks}
 }
 \value{
 A matrix with the same number of columns as "ranks" and as many

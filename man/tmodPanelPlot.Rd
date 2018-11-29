@@ -4,13 +4,14 @@
 \alias{tmodPanelPlot}
 \title{Plot a summary of multiple tmod analyses}
 \usage{
-tmodPanelPlot(x, pie = NULL, clust = "qval", filter.empty.cols = FALSE,
-  filter.empty.rows = TRUE, filter.unknown = TRUE,
-  filter.rows.pval = 0.05, filter.rows.auc = 0.5, filter.by.id = NULL,
-  col.labels = NULL, col.labels.style = "top", row.labels = NULL,
+tmodPanelPlot(x, pie = NULL, clust = "qval",
+  filter.empty.cols = FALSE, filter.empty.rows = TRUE,
+  filter.unknown = TRUE, filter.rows.pval = 0.05,
+  filter.rows.auc = 0.5, filter.by.id = NULL, col.labels = NULL,
+  col.labels.style = "top", row.labels = NULL,
   row.labels.auto = "both", pval.thr = 10^-2, pval.thr.lower = 10^-6,
   plot.func = NULL, grid = "at", pie.colors = c("#0000FF", "#cccccc",
-  "#FF0000"), plot.cex = 1, text.cex = 1, pie.style = "pie",
+  "#FF0000"), plot.cex = 1, text.cex = 1, pie.style = "rug",
   legend.style = "auto", ...)
 }
 \arguments{

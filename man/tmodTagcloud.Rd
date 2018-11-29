@@ -4,8 +4,8 @@
 \alias{tmodTagcloud}
 \title{Tag cloud based on tmod results}
 \usage{
-tmodTagcloud(results, filter = TRUE, simplify = TRUE, tag.col = "Title",
-  weights.col = "auto", pval.col = "P.Value", ...)
+tmodTagcloud(results, filter = TRUE, simplify = TRUE,
+  tag.col = "Title", weights.col = "auto", pval.col = "P.Value", ...)
 }
 \arguments{
 \item{results}{data frame produced by one of the tmod enrichment tests}

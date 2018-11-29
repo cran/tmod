@@ -176,17 +176,21 @@ showGene <- function( data, group, main= "", pch= 19,
 #' genes. If genelist is provided, then only genes in that list will be
 #' shown. An optional column, "fg" informs which genes are in the "foreground"
 #' data set.
-#' @return data frame containing module to gene mapping
+#' @return data frame containing module to gene mapping, or a list (if
+#' as.list == TRUE
 #' @param modules module IDs 
 #' @param genelist list of genes 
 #' @param mset module set to use
 #' @param fg genes which are in the foreground set
+#' @param as.list should a list of genes rather than a data frame be returned
 #' @export
-getGenes <- function(modules, genelist=NULL, fg=NULL, mset="LI") {
+getGenes <- function(modules, genelist=NULL, fg=NULL, mset="LI", as.list=FALSE) {
   mset <- .getmodules2(modules, mset)
 
   if(!is.null(genelist)) 
     mset$MODULES2GENES <- lapply(mset$MODULES2GENES, function(x) x[ x %in% genelist ])
+
+  if(as.list) return(mset$MODULES2GENES)
 
   ret <- data.frame(ID=mset$MODULES$ID)
   rownames(ret) <- ret$ID
@@ -376,7 +380,7 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
     for(i in 1:Nm) { lines(1:n, xcs[,i], col= col[i], lty=lty[i], lwd=lwd[i]) }
 
     # draw the diagonal
-    segments(0, 0, n, r[2], col= "grey")
+    if(style == "roc") segments(0, 0, n, r[2], col= "grey")
   }
 
   # plot the rug(s)

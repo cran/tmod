@@ -101,6 +101,8 @@ if(!exists("tmod", .myDataEnv)) {
 #' (gene set), or any other numbers which are treated as weights. In the latter case, '0' and only '0' is
 #' interpreted as absence of a variable in a module; any other value is
 #' interpreted as a weight and stored in the WEIGHTS slot of the tmod object.
+#'
+#' The mset2mtx function does the reverse.
 #' @seealso tmod-class
 #' @param x for mtx2mset, a numeric matrix with named rows and columns; for
 #'        mset2mtx, an object of the class tmod
@@ -136,8 +138,6 @@ mtx2mset <- function(x) {
     MODULES2GENES=modules2genes,
     GENES2MODULES=genes2modules,
     WEIGHTS=weights ))
-  
-
 }
 
 
@@ -194,6 +194,53 @@ check_tmod <- function(object) {
 
 }
 
+.invert_hash <- function(l) {
+  if(is.null(names(l))) names(l) <- seq_along(l)
+  ret <- split(rep(names(l), lengths(l)), unlist(l))
+  ret
+}
+
+
+#' Rename module IDs
+#'
+#' Change the IDs of modules
+#'
+#' Rename the modules by replacing the selected IDs with new IDs.
+#' @param mset a module set (object of class tmod)
+#' @param newids a named vector of unique new IDs
+#' @return object of class tmod with renamed IDs
+#' @export
+renameMods <- function(mset, newids) {
+  mset <- .getmodules2(NULL, mset)
+
+  if(any(duplicated(newids))) 
+    stop("new IDs must be unique")
+
+  from <- names(newids)
+  if(is.null(from)) stop("newids must be a named vector")
+
+  all <- mset$MODULES$ID
+
+  from <- from[ from %in% all ]
+  if(!length(from)) stop("no names(newids) match the IDs from mset")
+
+  newids <- newids[from]
+
+  remain <- setdiff(all, from)
+  newids <- c(newids, setNames(remain, remain))
+
+  ## this should not happen
+  if(!setequal(names(newids), all)) 
+    stop("ooops, something went wrong")
+
+  mset$MODULES$ID <- rownames(mset$MODULES) <- newids[mset$MODULES$ID]
+  names(mset$MODULES2GENES) <- newids[names(mset$MODULES2GENES)]
+
+  mset$GENES2MODULES <- .invert_hash(mset$MODULES2GENES)
+
+  mset
+}
+
 #' @param modules A data frame with at least columns ID and Title
 #' @param modules2genes A list with module IDs as names. Each member of the list is a character vector with IDs of genes contained in that module
 #' @param genes2modules A list with gene IDs as names. Each member of the list is a character vector with IDs of modules in 
@@ -229,10 +276,7 @@ makeTmod <- function(modules, modules2genes, genes2modules=NULL, genes=NULL) {
 
 
   if(is.null(genes2modules)) {
-    genes2modules <- sapply(genes$ID, function(g) {
-      sel <- sapply(modules2genes, function(m) g %in% m)
-      names(modules2genes)[sel]
-    }, simplify=F) 
+    genes2modules <- .invert_hash(modules2genes)
   } else {
     if(!all(genes$ID %in% names(genes2modules)))
       stop("All genes$ID must be found in names of genes2modules")
@@ -240,9 +284,51 @@ makeTmod <- function(modules, modules2genes, genes2modules=NULL, genes=NULL) {
 
 
   mset <- new("tmod", list(MODULES=modules, MODULES2GENES=modules2genes, GENES2MODULES=genes2modules, GENES=genes))
-
-
+  mset
 }
+
+## bind two modules together
+.module_bind <- function(x, y) {
+  x <- .getmodules2(NULL, x)
+  y <- .getmodules2(NULL, y)
+  m.com.cols <- intersect(colnames(x$MODULES), colnames(y$MODULES))
+  g.com.cols <- intersect(colnames(x$GENES), colnames(y$GENES))
+
+  if(length(intersect(x$MODULES$ID, y$MODULES$ID)) > 0) 
+    stop("module IDs of x and y cannot overlap")
+
+  newM <- rbind(x$MODULES[,m.com.cols, drop=FALSE],
+                y$MODULES[,m.com.cols, drop=FALSE])
+  newM2G <- c(x$MODULES2GENES, y$MODULES2GENES)
+
+  newG <- rbind(x$GENES[,g.com.cols, drop=FALSE],
+                y$GENES[,g.com.cols, drop=FALSE])
+
+  newG <- newG[ !duplicated(newG$ID), , drop=FALSE]
+
+  newG2M <- .invert_hash(newM2G)
+
+  mset <- new("tmod", list(MODULES=newM, MODULES2GENES=newM2G, GENES2MODULES=newG2M, GENES=newG))
+  mset
+}
+
+
+#' Bind two or more transcriptional module sets
+#' 
+#' Bind two or more transcriptional module sets
+#'
+#' @param x First module to bind
+#' @param ... further modules will be concatenated with x
+#' @return an object of class tmod which is the result of binding together
+#'         all modules
+#' @export
+mbind <- function(x, ...) {
+  args <- list(...)
+
+  args <- c(list(x), args)
+  Reduce(.module_bind, args)
+}
+
 
 
 #' S4 class for tmod
@@ -297,6 +383,19 @@ setMethod( "show", "tmod",
       nrow(object$GENES) )
   })
 
+
+
+#' Shows the length of a tmod object
+#'
+#' @name length
+#' @param x a tmod object
+#' @aliases length,tmod-method
+#' @rdname length
+#' @docType methods
+setMethod("length", "tmod",
+  function(x) {
+    nrow(x$MODULES)
+  })
 
 ## allow easy subsetting of tmod objects
 

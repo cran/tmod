@@ -4,8 +4,9 @@
 \alias{tmodImportMSigDB}
 \title{Import data from MSigDB}
 \usage{
-tmodImportMSigDB(file = NULL, format = "xml", organism = "Homo sapiens",
-  fields = c("STANDARD_NAME", "CATEGORY_CODE", "SUBCATEGORY_CODE"))
+tmodImportMSigDB(file = NULL, format = "xml",
+  organism = "Homo sapiens", fields = c("STANDARD_NAME",
+  "CATEGORY_CODE", "SUB_CATEGORY_CODE", "EXTERNAL_DETAILS_URL"))
 }
 \arguments{
 \item{file}{The name of the file to parse}

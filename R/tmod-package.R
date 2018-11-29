@@ -8,3 +8,8 @@
 #' @seealso \code{\link{tmodHGtest}}, \code{\link{tmodUtest}}
 #' @name tmod-package
 NULL
+
+
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("For tmod user guide, type `tmodUserGuide()'")
+}

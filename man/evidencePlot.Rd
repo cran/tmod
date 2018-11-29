@@ -4,10 +4,11 @@
 \alias{evidencePlot}
 \title{Create an evidence plot for a module}
 \usage{
-evidencePlot(l, m, mset = "all", scaled = TRUE, rug = TRUE, roc = TRUE,
-  filter = FALSE, unique = TRUE, add = FALSE, col = "black",
-  col.rug = "#eeeeee", gene.labels = NULL, gl.cex = 1, style = "roc",
-  lwd = 1, lty = 1, rug.size = 0.2, legend = NULL, ...)
+evidencePlot(l, m, mset = "all", scaled = TRUE, rug = TRUE,
+  roc = TRUE, filter = FALSE, unique = TRUE, add = FALSE,
+  col = "black", col.rug = "#eeeeee", gene.labels = NULL,
+  gl.cex = 1, style = "roc", lwd = 1, lty = 1, rug.size = 0.2,
+  legend = NULL, ...)
 }
 \arguments{
 \item{l}{sorted list of HGNC gene identifiers}

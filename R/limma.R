@@ -48,6 +48,8 @@ tmodLimmaTest <- function(f,
   # sanity checks
   .check.limma(f)
 
+  sort.by <- match.arg(sort.by, c("msd", "pval", "lfc"))
+
   N  <- ncol(f$coefficients)
   cn <- coef
 
