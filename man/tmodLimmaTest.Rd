@@ -4,8 +4,14 @@
 \alias{tmodLimmaTest}
 \title{Run tmod enrichment tests directly on a limma object}
 \usage{
-tmodLimmaTest(f, genes, sort.by = "msd", tmodFunc = tmodCERNOtest,
-  coef = NULL, ...)
+tmodLimmaTest(
+  f,
+  genes,
+  sort.by = "msd",
+  tmodFunc = tmodCERNOtest,
+  coef = NULL,
+  ...
+)
 }
 \arguments{
 \item{f}{result of linear model fit produced by limma functions lmFit and eBayes}
@@ -45,6 +51,7 @@ better than ordering by p-value or by log fold change. See discussion in
 the package vignette.
 }
 \examples{
+\dontrun{
 data(Egambia)
 design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
 if(require(limma)) {
@@ -52,6 +59,7 @@ if(require(limma)) {
   ret <- tmodLimmaTest(fit, genes=Egambia$GENE_SYMBOL)
   tmodSummary(ret)
   tmodPanelPlot(ret)
+}
 }
 }
 \seealso{

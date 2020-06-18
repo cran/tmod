@@ -52,7 +52,6 @@
 #' By default, either all colors are returned, or, if it is a gradient
 #' palette, only three.
 #'
-#' Yes, I wrote this function to save myself the slightest amount of typing.
 #' @param n Number of colors to return (default: all for "friendly", 3 for everything else)
 #' @param set Which palette set (see Details).
 #' @param alpha 0 for maximum transparency, 1 for no transparency.
@@ -255,19 +254,30 @@ hgEnrichmentPlot <- function(fg, bg, m, mset="all", ...) {
 #' Create an evidence plot for a module
 #'
 #' This function creates an evidence plot for a module, based on an
-#' ordered list of genes. The plot shows the receiving operator
+#' ordered list of genes. By default, the plot shows the receiving operator
 #' characteristic (ROC) curve and a rug below, which indicates the distribution of the
 #' module genes in the sorted list.
+#'
+#' Several styles of the evidence plot are possible:
+#'  * roc (default): a receiver-operator characteristic like curve; the
+#'    area under the curve corresponds to the effect size (AUC)
+#'  * roc_absolute: same as above, but the values are not scaled by the
+#'    total number of genes in a module
+#'  * gsea
+#'  * enrichment: the curve shows relative enrichment at the given position
+#'
+#' 
 #' @param l sorted list of HGNC gene identifiers
 #' @param m character vector of modules for which the plot should be created
 #' @param mset Which module set to use (see tmodUtest for details)
-#' @param scaled if TRUE, the cumulative sums will be divided by the total sum (default)
 #' @param rug if TRUE, draw a rug-plot beneath the ROC curve
 #' @param roc if TRUE, draw a ROC curve above the rug-plot
 #' @param filter if TRUE, genes not defined in the module set will be removed
 #' @param unique if TRUE, duplicates will be removed
 #' @param add if TRUE, the plot will be added to the existing plot
 #' @param gene.labels if TRUE, gene names are shown; alternatively, a named character vector with gene labels to be shown, or NULL (default) for no labels (option evaluated only if rug is plotted)
+#' @param gene.colors NULL (default) or a character vectors indicating the color for each gene. Either a named vector or a vector with the same order of genes as `l`.
+#' @param gene.lines a number or a vector of numbers; line width for marking the genes on the rug (default=1). If the vector is named, the names should be gene ids.
 #' @param gl.cex Text cex (magnification) for gene labels
 #' @param style "roc" for receiver-operator characteristic curve (default), and "gsea" for GSEA-style (Kaplan-Meier like plot)
 #' @param col a character vector color to be used
@@ -288,10 +298,13 @@ hgEnrichmentPlot <- function(fg, bg, m, mset="all", ...) {
 #' evidencePlot(l, "LI.M127")
 #' evidencePlot(l, filter=TRUE, "LI.M127")
 #' @export
-evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
+evidencePlot <- function(l, m, mset="all", rug=TRUE, roc=TRUE,
   filter= FALSE, unique=TRUE, add= FALSE, col="black", 
   col.rug="#eeeeee",
-  gene.labels=NULL, gl.cex=1,
+  gene.labels=NULL, 
+  gene.colors=NULL,
+  gene.lines=1,
+  gl.cex=1,
   style="roc",
   lwd=1, lty=1, rug.size=0.2,
   legend=NULL, ...) {
@@ -302,15 +315,43 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
   if(!roc) rug.size <- 1
   if(!rug) rug.size <- 0
 
-  style <- match.arg(style, c("roc", "gsea"))
+  style <- match.arg(style, c("roc", "roc_absolute", "gsea", "enrichment"))
 
   # standardize the modules
   m <- as.character(m)
   mset <- .getmodules2(NULL, mset)
 
   if(! all(m %in% names(mset$MODULES2GENES))) stop("No such module")
-  if(filter) l <- l[ l %in% mset$GENES$ID ]
-  if(unique) l <- unique(l)
+
+  #if(filter) l <- l[ l %in% mset$GENES$ID ]
+  keep <- rep(TRUE, length(l))
+  if(filter) keep[ ! l %in% mset$GENES$ID ] <- FALSE
+  #if(unique) l <- unique(l)
+  if(unique) keep[ duplicated(l) ] <- FALSE
+  l <- l[ keep ]
+
+  # gene colors
+  if(!is.null(gene.colors)) {
+    if(is.null(names(gene.colors))) {
+      gene.colors <- gene.colors[ keep ]
+      stopifnot(length(gene.colors) == length(l))
+      names(gene.colors) <- l
+    }
+  }
+
+  # gene line widths
+
+  if(is.null(names(gene.lines))) {
+    if(length(gene.lines) == 1) {
+      gene.lines <- rep(gene.lines, length(l))
+      names(gene.lines) <- l
+    } else if(length(gene.lines) != length(keep)) {
+      stop("if gene.lines is shorter than l, then it must be named")
+    }
+    gene.lines <- gene.lines[keep]
+    names(gene.lines) <- l
+  }
+
 
   n <- length(l)
   Nm <- length(m)
@@ -329,7 +370,7 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
       names(gene.labels) <- sel
     }
 
-    gene.labels <- unique(as.character(gene.labels))
+    #gene.labels <- unique(as.character(gene.labels))
     
     if(is.null(names(gene.labels))) {
       names(gene.labels) <- gene.labels
@@ -346,22 +387,26 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
 
   # cumulative sum or scaled cumulative sum
   if(roc) {
-    if(scaled) {
-      cfunc <- function(xx) cumsum(xx) / sum(xx)
-      r <- c(0, 1)
-      ylab="Fraction of genes in module"
-    } else {
-      cfunc <- function(xx) cumsum(xx)
-      r <- range(xcs)
-      ylab <- "Number of genes in module"
-    }
-
     cfunc2 <- switch(style,
-      roc=cfunc,
-      gsea=function(xx) { cfunc(xx) - cfunc(!xx) }
+      roc=function(xx) cumsum(xx)/sum(xx),
+      gsea=function(xx) { cumsum(xx)/sum(xx) - cumsum(!xx)/sum(!xx) },
+      roc_absolute=cumsum,
+      enrichment=function(xx) (cumsum(xx)/(1:length(xx)))/(sum(xx)/length(xx))
       )
 
     xcs <- apply(x, 2, cfunc2)
+
+    ylab <- switch(style,
+      roc="Fraction of genes in module",
+      roc_absolute="Number of genes in module",
+      gsea="Relative enrichment",
+      enrichment="Enrichment")
+
+    r <- switch(style,
+      roc=c(0, 1),
+      roc_absolute=c(0, max(apply(x, 2, sum))),
+      gsea=c(0, max(xcs)),
+      enrichment=c(0, max(xcs)))
 
     # additional space for the rug
     r[1] <- - rug.size * (r[2]-r[1]) / (1-rug.size)
@@ -392,8 +437,18 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
 
     # draw each individual rug
     for(i in 1:Nm) {
-      w <- which(x[,i])
-      segments(w, step * i, w, step * (i-0.8), col= col[i], lty=lty[i], lwd=lwd[i])
+      w <- which(x[,i]) # which genes to show for module m[i]
+      gi <- l[w] # gene ids to show
+
+      if(is.null(gene.colors)) {
+        cols <- col[i]
+      } else {
+        cols <- ifelse(is.na(gene.colors[gi]), col[i], gene.colors[gi])
+      }
+
+      lwds <- ifelse(is.na(gene.lines[gi]), lwd[i], gene.lines[gi])
+
+      segments(w, step * i, w, step * (i-0.8), col= cols, lty=lty[i], lwd=lwds)
     }
 
     # add gene labels
@@ -402,7 +457,17 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
       lw <- grconvertX( c(0, lw), from="i", to="u")
       lw <- lw[2] - lw[1]
       lpos <- lw * 1.5 * (1:length(gene.labels))
-      rpos <- match(names(gene.labels), l)
+      gi <- names(gene.labels)
+      rpos <- match(gi, l)
+
+      if(is.null(gene.colors)) {
+        cols <- "black"
+      } else {
+        cols <- ifelse(is.na(gene.colors[gi]), "black", gene.colors[gi])
+      }
+
+      lwds <- ifelse(is.na(gene.lines[gi]), lwd[1], gene.lines[gi])
+
 
       for(i in 1:length(lpos)) {
         if(rpos[i] + lw > lpos[i]) {
@@ -411,9 +476,8 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
         }
       }
 
-      text(lpos, 0.1, gene.labels, srt=90, pos=4)
-
-      segments(rpos, step * 0.2, lpos + lw/2, 0.08)
+      text(lpos, 0.1, gene.labels, srt=90, pos=4, col=cols)
+      segments(rpos, step * 0.2, lpos + lw/2, 0.08, col=cols, lwd=lwds)
     }
   }
 
@@ -428,20 +492,27 @@ evidencePlot <- function(l, m, mset="all", scaled= TRUE, rug=TRUE, roc=TRUE,
 #' Plot a PCA object returned by prcomp
 #'
 #' Plot a PCA object returned by prcomp
+#'
+#' This is a simplistic function. A much better way is to use the pca2d
+#' function from the pca3d package.
 #' @param pca PCA object returned by prcomp
 #' @param components a vector of length two indicating the components to plot
 #' @param pch Type of character to plot (default: 19)
-#' @param col Color for plotting (default: grey)
+#' @param col Color for plotting (default: internal palette)
 #' @param group a factor determining shapes of the points to show (unless
 #'        overriden by pch=...)
+#' @param legend draw a legend? If legend is a position (eg. "topright"), then a legend
+#'        is drawn. If NULL or if the group parameter is NULL, then not.
+#' @param cex size of the symbols used for plotting
 #' @param ... any further parameters will be passed to the plot() function
 #'        (e.g. col, cex, ...)
 #' @return If group is NULL, then NULL; else a data frame containing
 #'         colors and shapes matching each group
 #' @export
-pcaplot <- function(pca, components=1:2, group=NULL, col="black", pch=19, ...) {
+pcaplot <- function(pca, components=1:2, group=NULL, col=NULL, pch=19, cex=2, legend=NULL, ...) {
 
   args <- list(...)
+  
 
   x <- pca$x[, components[1]]
   y <- pca$x[, components[2]]
@@ -450,10 +521,15 @@ pcaplot <- function(pca, components=1:2, group=NULL, col="black", pch=19, ...) {
     group <- factor(group)
     gr <- as.numeric(factor(group))
     pch <- c(15:19)[ gr %% 5L ]
+    if(is.null(col)) col <- .mypalette(n=length(levels(group)))
+    col <- col[ gr ]
     if(length(col) == 1L) col <- rep(col, length(x))
   }
 
+  if(is.null(col)) col <- "grey"
+
   default.args <- list(pch=pch, xlim=range(x), ylim=range(y), bty="n", pch=pch, 
+    cex=cex,
     col=col,
     xlab=paste("PC", components[1]), ylab=paste("PC", components[2]))
   args <- c(args, default.args)
@@ -463,9 +539,381 @@ pcaplot <- function(pca, components=1:2, group=NULL, col="black", pch=19, ...) {
   abline(h=0, col="grey")
   abline(v=0, col="grey")
 
+  if(!is.null(legend) && !is.null(group)) {
+      n <- length(levels(group))
+      mm <- match(levels(group), group)
+      legend(legend, levels(group), pch=pch[mm], col=col[mm], bty="n")
+  }
   if(is.null(group)) return(NULL)
 
   sel <- !duplicated(group)
 
   return(list(groups=group[sel], pch=args$pch[sel], colors=args$col[sel]))
+}
+
+
+.auto_labels <- function(labels, modules, mset) {
+
+  if(is.null(labels)) {
+    mset <- .getmodules2(NULL, mset)
+    
+    mn <- names(modules)
+    ids <- mset$MODULES[ mn, "ID" ]
+    titles <- mset$MODULES[ mn, "Title" ]
+    titles[is.na(titles)] <- mn[is.na(titles)]
+    ids[is.na(ids)]       <- mn[is.na(ids)]
+
+    labels <- titles
+    ne <- titles != ids
+    labels[ ne ] <- sprintf("%s (%s)", labels[ne], ids[ne])
+  }
+
+  if(is.null(labels)) labels <- names(modules)
+  names(labels) <- names(modules)
+
+  return(labels)
+}
+
+#' Plot a correlation heatmap for modules
+#'
+#' Plot a correlation heatmap for modules
+#' @param upper.cutoff Specify upper cutoff for the color palette
+#' @param labels Labels for the modules (if NULL, labels will be retrieved from `mset`)
+#' @param ... Any further parameters are passed to heatmap.2
+#' @inheritParams modOverlaps
+#' @importFrom gplots heatmap.2
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom grDevices colorRampPalette
+#' @export
+modCorPlot <- function(modules, mset=NULL, labels=NULL, stat="jaccard", upper.cutoff=.1, ...) {
+  n <- 13
+  
+  if(!is.list(modules)) {
+    mset <- .getmodules2(modules, mset)
+    modules <- mset$MODULES2GENES[modules]
+  } else {
+    mset <- .getmodules2(NULL, mset)
+  }
+
+  labels <- .auto_labels(labels, modules, mset)
+
+  crmat <- modOverlaps(modules, mset, stat=stat)
+
+  heatmap.args <- list(...)
+  default.args <- list(
+    x=crmat,
+    trace="n", 
+    col=colorRampPalette(c("black", "cyan"))(n),
+    breaks=seq(0, upper.cutoff, length.out=n + 1),
+    symm=TRUE,
+    margins=c(2, 15),
+    scale="n",
+    labRow=labels,
+    labCol="",
+    dendrogram="r")
+
+  for(.p in names(heatmap.args)) {
+    default.args[[.p]] <- heatmap.args[[.p]]
+  }
+
+
+  hm <- function(...) heatmap.2(...)
+  if(FALSE) heatmap.2()
+
+  do.call(hm, default.args)
+}
+
+
+
+## return all combinations of modules sharing a certain number of elements
+## min.size: minimum number of modules in a combination
+## min.overlap: minimum number of genes to share between modules
+.combn_upset <- function(set, min.size=1, min.overlap=1, max.comb=NULL) {
+
+  n <- length(set)
+  setN <- names(set)
+  if(min.size > n) min.size <- n
+  if(!is.null(max.comb) && n > max.comb) n <- max.comb
+
+  ret <- lapply(min.size:n, function(i) {
+    combs <- combn(setN, i)
+
+    .ret <- lapply(1:ncol(combs), function(j) {
+      x <- combs[,j]
+      common <- Reduce(intersect, set[x])
+      full <- Reduce(union, set[x])
+      total <- sum(sapply(set[x], length))
+      attr(common, "modules") <- x
+      attr(common, "jaccard") <- length(common)/length(full)
+      attr(common, "soerensen") <- length(set[x])*length(common)/total
+      attr(common, "number") <- length(common)
+      attr(common, "overlap") <- length(common)/min(sapply(set[x], length))
+      return(common)
+    })
+    names(.ret) <- apply(combs, 2, paste, collapse="_:_")
+    return(.ret)
+  })
+
+  ret <- unlist(ret, recursive=FALSE)
+  ret.l <- sapply(ret, length)
+  ret <- ret[ ret.l > min.overlap - 1 ]
+
+  return(ret)
+}
+
+## generate combinations for upset
+.upset_generate_combinations <- function(modules, modgroups, min.size, min.overlap, max.comb, value) {
+
+  message("generating combinations")
+  ups <- lapply(modgroups, function(g) {
+    .ups <- .combn_upset(modules[g], min.size=min.size, min.overlap=min.overlap, max.comb=max.comb)
+    vals <- sapply(.ups, attr, value)
+    .ups <- .ups[ order(-vals) ]
+    attr(.ups, "maxval") <- max(vals)
+    .ups
+  })
+  message("done")
+
+  return(ups)
+}
+
+## find module groups for upset
+.upset_find_groups <- function(modules, mset, group.cutoff, min.group, group.stat="number") {
+  message(sprintf("finding groups stat=%s cutoff=%.2f", group.stat, group.cutoff))
+  modgroups <- modGroups(modules, mset, min.overlap=group.cutoff, stat=group.stat)
+  min.group.orig <- min.group
+
+  while(sum(sapply(modgroups, length) >= min.group) < 1) {
+    min.group <- min.group - 1
+  }
+
+  if(min.group < min.group.orig) {
+    warning(sprintf("No groups found for group size of %d;\nchanging parameter to %d",
+      min.group.orig, min.group))
+  }
+
+  modgroups <- modgroups[ sapply(modgroups, length) >= min.group ]
+  message("done")
+
+  return(modgroups)
+}
+
+
+## automagically adapt font size to the given vertical and horizontal space
+.adapt_cex <- function(labels, lab.cex, horiz=1, vert=1, vert.expand=1.3, vert.mar=1, step=.95) {
+
+  message("adapting fonts")
+  while((maxwidth <- max(sapply(labels, strwidth, cex=lab.cex))) < horiz ||
+        (length(labels) + vert.mar) * vert.expand * max(sapply(labels, strheight, cex=lab.cex)) < vert)  {
+    lab.cex <- lab.cex / step
+  }
+  message(sprintf("lab.cex=%.2f", lab.cex))
+  while((maxwidth <- max(sapply(labels, strwidth, cex=lab.cex))) > horiz ||
+        (length(labels) + vert.mar) * vert.expand * max(sapply(labels, strheight, cex=lab.cex)) > vert)  {
+    lab.cex <- lab.cex * step
+  }
+  message(sprintf("lab.cex=%.2f", lab.cex))
+  return(lab.cex)
+}
+
+
+#' Upset plot
+#'
+#' Upset plots help to interpret the results of gene set enrichment.
+#' 
+#' The plot consists of three parts. The main part shows the overlaps
+#' between the different modules (module can be a gene set, for example).
+#' Each row corresponds to one module. Each column corresponds to an
+#' intersection of one or more gene sets. Dots show which gene sets are in
+#' that combination. Which combinations are shown depends on the parameters
+#' `min.overlap` (which is the cutoff for the similarity measure specified by
+#' the `value` parameter), the parameter `min.group` which specifies the
+#' minimum number of modules in a group and the parameter `max.comb` which
+#' specifies the maximum number of combinations tested (too many combinations
+#' are messing the plot).
+#'
+#' Above the intersections, you see a plot showing a similarity measure of
+#' the intersected gene sets. By default it is the number of module members
+#' (genes in case of a gene set), but several
+#' other measures (e.g. the Jaccard index) are also implemented.
+#' 
+#' To the left are the module descriptions (parameter `label`; if label is
+#' empty, the labels are taken from the mset object provided or, if that is
+#' NULL, from the default tmod module set). The function attempts to scale
+#' the text in such a way that all labels are visible. 
+#'
+#' By default, upset attempts to group the modules. This is done by
+#' defining a similarity measure (by default the Jaccard index, parameter
+#' `group.stat`) and a cutoff threshold (parameter `group.cutoff`).
+#' @return upset returns invisibly the identified module groups: a list of
+#'         character vectors.
+#' @param min.size minimal number of modules in a comparison to show
+#' @param min.overlap smallest overlap (number of elements) between two modules to plot
+#' @param min.group Minimum number of modules in a group. Group with a
+#'        smaller number of members will be ignored. Change this value to 
+#'        1 to see also modules which could not be grouped.
+#' @param group Should the modules be grouped by the overlap?
+#' @param max.comb Maximum number of combinations to show (i.e., number of
+#'        dots on every vertical segment in the upset plot)
+#' @param value what to show on the plot: "number" (number of common
+#'        elements; default), "soerensen" (Sørensen–Dice coefficient), 
+#'        "overlap" (Szymkiewicz–Simpson coefficient) or "jaccard" (Jaccard index)
+#' @param cutoff Combinations with the `value` below cutoff will not be shown.
+#' @param labels Labels for the modules. Character vector with the same
+#'        length as `modules`
+#' @param group.cutoff cutoff for group statistics 
+#' @param group.stat Statistics for finding groups 
+#'        (can be "number", "overlap", "soerensen" or "jaccard"; see function modOverlaps)
+#' @param lab.cex Initial cex (font size) for labels
+#' @param pal Color palette to show the groups. 
+#' @seealso modGroups, modOverlaps
+#' @inheritParams tmodUtest
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom utils combn
+#' @examples
+#' \dontrun{
+#' data(Egambia)
+#' design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
+#' library(limma)
+#' fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+#' tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
+#' res <- tmodCERNOtest(tt$GENE_SYMBOL)
+#'
+#' upset(res$ID, group.cutoff=.1, value="jaccard")
+#' }
+#' @export
+upset <- function(modules, mset=NULL, min.size=2, min.overlap=2, max.comb=4, 
+  min.group=2, value="number", cutoff=NULL, labels=NULL, group.stat="jaccard",
+  group.cutoff=.1,
+  group=TRUE,
+  pal=brewer.pal(8, "Dark2"),
+  lab.cex=1) {
+
+  value <- match.arg(value, c("number", "jaccard", "soerensen", "overlap"))
+  group.stat <- match.arg(group.stat, c("number", "jaccard", "soerensen", "overlap"))
+
+
+  if(!is.list(modules)) {
+    mset <- .getmodules2(modules, mset)
+    modules <- mset$MODULES2GENES[modules]
+  } else {
+    mset <- .getmodules2(NULL, mset)
+  }
+
+  labels <- .auto_labels(labels, modules, mset)
+
+  if(group) {
+    modgroups <- .upset_find_groups(modules, mset, group.cutoff, min.group, group.stat)
+    group.n <- length(modgroups)
+    pal <- rep(pal, ceiling(group.n/length(pal)))
+    pal <- pal[1:group.n]
+    names(pal) <- names(modgroups)
+  } else {
+    modgroups <- list(all=names(modules))
+    pal <- c(all="#333333")
+    pal.bar <- c(all="#333333")
+  }
+
+  message(sprintf("Number of groups: %d", length(modgroups)))
+
+  ups <- .upset_generate_combinations(modules, modgroups, min.size, min.overlap, max.comb, value)
+  ord <- order(-sapply(ups, attr, "maxval"))
+  ups <- ups[ ord ]
+  modgroups <- modgroups[ ord ] # reorder by best value from ups
+  ups.col <- unlist(lapply(names(modgroups), function(mgn) { rep(pal[mgn], length(ups[[mgn]])) }))
+  modules <- modules[ unlist(modgroups) ] # reorder by group
+
+  ups <- unlist(ups, recursive=FALSE)
+  ups.l <- sapply(ups, attr, value)
+  if(!is.null(cutoff)) {
+    sel <- ups.l > cutoff
+    ups <- ups[ sel ]
+    ups.l <- ups.l[ sel ]
+    ups.col <- ups.col[ sel ]
+  }
+  ups.n <- length(ups)
+
+  modlist <- unlist(lapply(ups, attr, "modules"))
+  modules <- modules[ names(modules) %in% modlist ]
+
+  # ----------- plotting ----------------------------------
+
+  div.right <- ups.n + 1
+  div.left   <- .3 * 2 * div.right
+  if((.mwidth <- max(sapply(labels, strwidth, cex=lab.cex))) < div.left) {
+    div.left <- 1.1 * .mwidth
+  }
+  div.top <- 1.1 * max(ups.l)
+  div.bottom <- .7 * 2 * div.top
+
+  xlim <- c(-div.left, ups.n + 1)
+  ylim <- c(-div.bottom, 1.1 * max(ups.l))
+
+  dev.hold()
+  plot(NULL, xlim=xlim, ylim=ylim,
+    xaxt="n", yaxt="n",
+    bty="n", xlab="", ylab="")
+
+  #rect(xlim[1], ylim[1], xlim[2], ylim[2])
+
+  sw <- strwidth("XX")
+  ylab <- switch(value, number="Number of members", jaccard="Jaccard Index", 
+    soerensen="Soerensen-Dice coefficient", overlap="Overlap coefficient")
+  text(-sw * 3, max(ups.l)/2, ylab, srt=90)
+
+  ticks <- axisTicks(c(0, max(ups.l)), log=FALSE)
+  axis(2, at=ticks, pos=0)
+
+  ## ------ upper barplot
+  rect(
+    1:ups.n - .4,
+    0, 
+    1:ups.n + .4,
+    ups.l,
+    col=ups.col, border=NA)
+
+  segments(0, ticks, ups.n + 1, ticks, col="white")
+
+  ## ------ left bottom labels
+
+  labels <- labels[ names(modules) ]
+  lab.cex <- .adapt_cex(labels, lab.cex, div.left, div.bottom)
+  modules.n <- length(modules)
+  step <- div.bottom/(modules.n + 1)
+
+  vpos <- (1:modules.n) * -step - step/2
+  names(vpos) <- names(modules)
+  text(0, vpos, labels, pos=2, cex=lab.cex)
+ 
+  ## ------ right bottom upset plot
+
+  sel <- rep(c(TRUE, FALSE), floor(modules.n/2))
+  if(length(sel) > 0) {
+    rect(.5, vpos[sel] - step/2, ups.n + .5, vpos[sel] + step/2, col="#33333333", border=NA)
+  }
+  segments(.5 + 1:ups.n, max(vpos) + step/2, .5 + 1:ups.n, min(vpos) - step/2, col="white")
+ 
+  for(i in 1:ups.n) {
+    mm <- attr(ups[[i]], "modules")
+    mm.v <- vpos[mm]
+    segments(i, min(mm.v), i, max(mm.v), lwd=4, col=ups.col[i])
+    points(rep(i, length(mm.v)), mm.v, pch=19, cex=1.5, col=ups.col[i])
+  }
+  dev.flush()
+  return(invisible(modgroups))
+}
+
+
+upsetPlot <- function(items, labels, overlaps, add=FALSE, coords=NULL) {
+  if(is.null(names(labels))) {
+    names(labels) <- items
+  }
+
+  n <- length(items)
+
+  sel <- rep(c(TRUE, FALSE), floor(n/2))
+
+
+
+
 }

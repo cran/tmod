@@ -16,6 +16,10 @@
 #' @param tag.col Which column from results should be used as tags on the plot
 #' @param weights.col Which column from results should be used as weights for the tag cloud
 #' @param pval.col Which column contains the P values which will be used to shade the tags
+#' @param plot Should the tag cloud be plotted or only returned
+#' @param min.auc Minimal AUC to show (default: 0.5)
+#' @param max.qval Maximal adjusted p value to show (default: 0.05)
+#' @param maxn Maximum number of gene set enrichment terms shown on the plot (if NULL – default – all terms will be shown)
 #' @param ... Any further parameters are passed to the tagcloud function
 #' @return Either NULL or whatever tagcloud returns
 #' @examples
@@ -25,11 +29,17 @@
 #' result <- tmodHGtest( fg, bg )
 #' tmodTagcloud(result)
 #' @export
-tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", weights.col="auto", pval.col="P.Value", ... ) {
+tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", 
+  min.auc=.5, max.qval=.05, plot=TRUE,
+  weights.col="auto", pval.col="P.Value", maxn=NULL, ... ) {
 
   res <- results
 
   if(!is(res, "data.frame")) stop("res must be a data frame")
+  if(!is.null(maxn) && nrow(res) > maxn) res <- res[1:maxn, ] 
+
+  res <- res[ res$AUC > min.auc, ]
+  res <- res[ res$adj.P.Val < max.qval, ]
 
   if( weights.col == "auto" ) {
     if( "AUC" %in% colnames(res)) {
@@ -65,13 +75,17 @@ tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", 
     res <- res[ ! duplicated( res$Title ), ]
   }
 
+  ret <- NULL
   if(nrow(res) < 2 ) {
-    plot.new()
+    warning("Less than 2 results found, not generating plot")
+    if(plot) plot.new()
   } else {
-    tagcloud(strmultline(res$Title), weights=res[,weights.col], col=smoothPalette(-log10(res$P.Value), max=5), ceiling=5, ...)
+    ret <- tagcloud(strmultline(res$Title), weights=res[,weights.col], col=smoothPalette(-log10(res$P.Value), max=5), ceiling=5, 
+      wmin=.5, wmax=1.0, plot=plot,
+      ...)
   }
 
-  return(NULL)
+  return(invisible(ret))
 }
 
 
@@ -112,6 +126,8 @@ tmodTagcloud <- function( results, filter=TRUE, simplify=TRUE, tag.col="Title", 
 #' should be removed from the tag cloud
 #' @param simplify Whether the names of the modules should be simplified
 #' @param legend whether a legend should be shown
+#' @param maxn Maximum number of gene set enrichment terms shown on the plot (if NULL – default – all terms will be shown)
+#' @param plot if FALSE, no plot will be shown, but the enrichments will be calculated and returned invisibly
 #' @param ... Any further parameters passed to the tmod test function
 #' @importFrom tagcloud tagcloud strmultline smoothPalette
 #' @return A list containing the calculated enrichments as well as the
@@ -133,85 +149,142 @@ tmodPCA <- function(pca, loadings=NULL, genes,
                      components=c(1,2), 
                      plot.params=NULL,
                      filter=TRUE, simplify=TRUE, 
-                     legend=FALSE, ...) {
+                     legend=FALSE, 
+                     maxn=NULL,
+                     plot=TRUE,
+                     ...) {
 
   mode <- match.arg( mode, c( "simple", "leftbottom", "cross" ) )
   tmodfunc <- match.arg(tmodfunc, c( "tmodCERNOtest", "tmodUtest" ))
+
+  ret <- list()
+  ret$params <- list(
+    pca=pca,
+    loadings=loadings,
+    tmodfunc=tmodfunc,
+    genes=genes,
+    plotfunc=plotfunc,
+    mode=mode,
+    components=components,
+    plot.params=plot.params,
+    filter=filter,
+    simplify=simplify,
+    legend=legend,
+    maxn=maxn,
+    plot=plot
+  )
+
+  ret$enrichments <- list()
+
   tfunc <- switch(tmodfunc, tmodCERNOtest=tmodCERNOtest, tmodUtest=tmodUtest)
+  cc <- components
+
+  ret$enrichments <- lapply(cc, function(.c) {
+    .x <- pca$rotation[, .c, drop=TRUE]
+    gl <- list(
+      up=genes[ order(.x) ],
+      down=genes[ order(-.x) ],
+      abs=genes[ order(-abs(.x)) ])
+    lapply(gl, tfunc, ...)
+  })
+  names(ret$enrichments) <- paste0("PC.", cc)
+
+  class(ret) <- c("tmodPCA", class(ret))
+  if(plot) plot.tmodPCA(ret)
+  return(invisible(ret))
+}
+
+
+
+#' @export
+plot.tmodPCA <- function(x, ...) {
+  if(!is(x, "tmodPCA")) stop("x is not tmodPCA")
+  new_params <- list(...)
+
+  for(.p in names(new_params)) {
+    x$params[[.p]] <- new_params[[.p]]
+  }
+
+  params <- x$params
+  
+  plot.new()
   oldpar <- par("mfrow") # try to restore the screen after layout()
   on.exit(par(oldpar))
 
-  if( mode == "simple" ) { 
-    layout(matrix(c(2,3,
+  params$mode <- match.arg(params$mode, c( "simple", "leftbottom", "cross" ))
+
+  switch(params$mode,
+    simple=layout(matrix(c(2,3,
                     4,1),2,2,byrow=TRUE), 
-           widths=c(0.3, 0.7), heights=c(0.7, 0.3))
-  } else if( mode == "leftbottom" ) {
-    layout(matrix( c(4, 5, 5, 
+           widths=c(0.3, 0.7), heights=c(0.7, 0.3)),
+    leftbottom=layout(matrix( c(4, 5, 5, 
                      3, 5, 5, 
                      6, 1, 2), 3, 3, byrow=TRUE), 
-           widths=rep(1/3, 3), heights=rep(1/3, 3))
-  } else if( mode == "cross" ) {
-    layout(matrix( c( 6, 4, 0,
+           widths=rep(1/3, 3), heights=rep(1/3, 3)),
+    cross=layout(matrix( c( 6, 4, 0,
                       1, 5, 2,
                       0, 3, 0), 3, 3, byrow=TRUE), 
            widths=c( 1/4, 1/2, 1/4), heights=c( 1/4, 1/2, 1/4 ))
-  }
+  )
 
-  oldpar <- par( mar=c( 1, 2, 0, 0 ) )
-  on.exit( par(oldpar) )
+  cc <- paste0("PC.", params$components)[1:2]
 
-  cc <- components
-
-  ret <- list()
-  ret$enrichments <- list()
-
-  if( mode == "simple" ) {
-    ids <- paste0( "Component", cc )
-    res <- tfunc( genes[ order( abs( pca$rotation[,cc[1]] ), decreasing=T ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify )
-    ret$enrichments[[ids[1]]] <- res
-
-    res <- tfunc( genes[ order( abs( pca$rotation[,cc[2]] ), decreasing=T ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify, fvert=1 )
-    ret$enrichments[[ids[2]]] <- res
+  if(params$mode == "simple") {
+    fverts <- c(0, 0)
+    algorithm <- "oval"
+    enr <- lapply(x$enrichments[cc], `[[`, "abs")
   } else {
-    ids <- paste0( "Component", cc )
-    ids <- c( paste0(ids[1], c(".left", ".right")), paste0(ids[2], c(".bottom", ".top")))
+    #ids <- paste0( "Component", params$components )
+    #ids <- c(paste0(ids[1], c(".left", ".right")), paste0(ids[2], c(".bottom", ".top")))
+
+    enr <- lapply(x$enrichments[cc], `[`, c("up", "down"))
+    enr <- unlist(enr, recursive=FALSE)
 
     fverts <- c( 0, 0, 1, 1 )
-    if(mode == "cross") fverts <- c( 0, 0, 0, 0 )
-    
-    res <- tfunc( genes[ order( pca$rotation[,cc[1]], decreasing=F ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[1], algorithm="fill" )
-    ret$enrichments[[ids[1]]] <- res
-    res <- tfunc( genes[ order( pca$rotation[,cc[1]], decreasing=T ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[2], algorithm="fill" )
-    ret$enrichments[[ids[2]]] <- res
-    res <- tfunc( genes[ order( pca$rotation[,cc[2]], decreasing=F ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[3], algorithm="fill" )
-    ret$enrichments[[ids[3]]] <- res
-    res <- tfunc( genes[ order( pca$rotation[,cc[2]], decreasing=T ) ], ... )
-    tmodTagcloud( res, filter=filter, simplify=simplify, fvert=fverts[4], algorithm="fill" )
-    ret$enrichments[[ids[4]]] <- res
+    if(params$mode == "cross") fverts <- c(0, 0, 0, 0)
+    algorithm <- "fill"
   }
 
-  plot.params <- c(list(pca=pca, components=components), plot.params)
+  oldpar <- par(mar=c(1, 2, 0, 0))
+  on.exit(par(oldpar))
+
+  n <- length(enr)
+  l_i <- which.max(lapply(enr, nrow)) # largest result list
+
+  ## first, calculate a rough scale
+  foo <- tmodTagcloud(enr[[l_i]], 
+    filter=params$filter, simplify=params$simplify, fvert=fverts[1], algorithm=params$algorithm, maxn=params$maxn, plot=FALSE)
+    scale <- 1.1 * attr(foo, "scale")
+
+  ## plot the tag clouds
+  tagclouds <- lapply(1:n, function(i) {
+    tmodTagcloud(enr[[i]], 
+      filter=params$filter, simplify=params$simplify, fvert=fverts[i], algorithm=params$algorithm, maxn=params$maxn, scale=scale,
+      min.auc=.5, max.qval=0.05)
+  })
+
+  #names(tagclouds) <- ids
+  #x$tagclouds <- tagclouds
+
+  plot.params <- c(list(pca=params$pca, components=params$components), params$plot.params)
 
   # ------------ main plot --------------------
-  ret$plot.return <- do.call(plotfunc, plot.params )
+  x$plot.return <- do.call(params$plotfunc, plot.params )
   # ------------ main plot --------------------
 
-  if(legend) {
+  if(params$plot && params$legend) {
+    `%.n%` <- function(x, y) if(is.na(x) || is.null(x)) y else x
+
     par(mar=c(0,0,0,0), usr=c(0,1,0,1))
     plot.new()
     legend("topleft",
-      ret$plot.return$groups,
-      col=ret$plot.return$colors,
-      pch=ret$plot.return$shapes,
+      as.character(x$plot.return$groups),
+      col=x$plot.return$colors %.n% x$plot.return$col %.n% "black",
+      pch=x$plot.return$shapes %.n% x$plot.return$pch %.n% 19,
       bty="n",
       cex=1.5)
   }
-  #plot.new()
 
-  return(invisible(ret))
+
+  return(invisible(x))
 }

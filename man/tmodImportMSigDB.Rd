@@ -4,9 +4,13 @@
 \alias{tmodImportMSigDB}
 \title{Import data from MSigDB}
 \usage{
-tmodImportMSigDB(file = NULL, format = "xml",
-  organism = "Homo sapiens", fields = c("STANDARD_NAME",
-  "CATEGORY_CODE", "SUB_CATEGORY_CODE", "EXTERNAL_DETAILS_URL"))
+tmodImportMSigDB(
+  file = NULL,
+  format = "xml",
+  organism = "Homo sapiens",
+  fields = c("STANDARD_NAME", "CATEGORY_CODE", "SUB_CATEGORY_CODE",
+    "EXTERNAL_DETAILS_URL")
+)
 }
 \arguments{
 \item{file}{The name of the file to parse}
@@ -16,6 +20,9 @@ tmodImportMSigDB(file = NULL, format = "xml",
 \item{organism}{Select the organism to use. Use "all" for all organisms in the file (only for "xml" format; default: "Homo sapiens")}
 
 \item{fields}{Which fields to import to the MODULES data frame (only for "xml" format)}
+}
+\value{
+A tmod object
 }
 \description{
 Import data from an MSigDB file in either XML or GMT format

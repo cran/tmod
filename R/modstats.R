@@ -116,3 +116,126 @@ modjaccard <- function(mset=NULL, g=NULL) {
 
   crmat/(mm + t(mm) - crmat)
 }
+
+
+#' Calculate overlaps of the modules
+#'
+#' Calculate overlaps of the modules
+#'
+#' For a set of modules (aka gene sets) determine the similarity between
+#' these. You can run modOverlaps either on a character vector of module
+#' IDs or on a list. In the first case, the module elements are taken from
+#' `mset`, and if that is NULL, from the default tmod module set. 
+#'
+#' Alternatively, you can provide a list in which each element is a
+#' character vector. In this case, the names of the list are the module IDs,
+#' and the character vectors contain the associated elements.
+#'
+#' The different statistics available are:
+#'  * "number": total number of common genes (size of the overlap)
+#'  * "jaccard": Jaccard index, i.e. \eqn{\frac{|A \cap B|}{|A \cup B|}}
+#'    (number of common elements divided by the total number of unique elements);
+#'  * "soerensen": Soerensen-Dice coefficient, defined as \eqn{\frac{2 \cdot |A \cap B|}{|A| + |B|}} 
+#'    (number of common elements divided by the average size of both gene sets)
+#'  * "overlap": Szymkiewicz-Simpson coefficient, defined as \eqn{\frac{|A \cap B|}{\min(|A|, |B|)}} 
+#'    (number of common elements divided by the size of the smaller gene set)
+#' 
+#' @param modules either a character vector with module IDs from mset, or a list which
+#'        contains the module members
+#' @param stat Type of statistics to return. 
+#'        "number": number of common genes (default);
+#'        "jaccard": Jaccard index;
+#'        "soerensen": Soerensen-Dice coefficient;
+#'        "overlap": Szymkiewicz-Simpson coefficient.
+#' @inheritParams tmodUtest
+#' @export
+modOverlaps <- function(modules, mset=NULL, stat="jaccard") {
+  if(!is.list(modules)) {
+    mset <- .getmodules2(modules, mset)
+    modules <- mset$MODULES2GENES[modules]
+  }
+
+  stat <- match.arg(stat, c("jaccard", "number", "soerensen", "overlap"))
+
+  g <- unique(unlist(modules))
+  mat <- sapply(modules, function(x) g %in% x)
+  crmat <- crossprod(mat)
+  sums <- diag(crossprod(mat))
+  n <- length(sums)
+  mm <- matrix(sums, nrow=n, ncol=n)
+
+  if(stat == "jaccard")   crmat <- crmat/(mm + t(mm) - crmat)
+  if(stat == "soerensen") crmat <- 2 * crmat / (mm + t(mm))
+  if(stat == "overlap")   {
+    minmat <- pmin(mm, t(mm))
+    crmat <- crmat / minmat
+  }
+
+  return(crmat)
+}
+
+
+
+
+#' Find group of modules 
+#'
+#' Find group of modules  based on shared genes
+#'
+#' Split the modules into groups based on the overlapping items.
+#'
+#' The first argument, modules, is either a character vector of module identifiers from `mset`
+#' (NULL mset indicates the default mset of tmod) or a list. If it is a
+#' list, then each element is assumed to be a character vector with module
+#' IDs.
+#' @examples
+#' mymods <- list(A=c(1, 2, 3), B=c(2, 3, 4), C=c(5, 6, 7))
+#' modGroups(mymods)
+#' @param min.overlap Minimum number of overlapping items if stat ==
+#'        number, minimum jaccard index if stat == jaccard etc.
+#' @param modules Either a list of modules or character vector. 
+#' @inheritParams tmodUtest
+#' @inheritParams modOverlaps
+#' @export
+modGroups <- function(modules, mset=NULL, min.overlap=2, stat="number") {
+  stat <- match.arg(stat, c("number", "jaccard", "soerensen", "overlap"))
+
+  crmat <- modOverlaps(modules, mset, stat=stat)
+  crmat[ crmat < min.overlap ] <- 0
+
+  if(!is.list(modules)) {
+    mset <- .getmodules2(modules, mset)
+    modules <- mset$MODULES2GENES[modules]
+  }
+
+  colnames(crmat) <- rownames(crmat) <- names(modules)
+
+  groups <- list()
+
+  .recursive_find <- function(current, m, crmat) {
+    current <- c(current, m)
+
+    totest <- colnames(crmat)[ crmat[m, ] > 0 ]
+    totest <- setdiff(totest, current)
+    while(length(totest) > 0) {
+      mm <- totest[1]
+      current <- .recursive_find(current, mm, crmat)
+      totest <- setdiff(totest, current)
+    }
+
+    return(current)
+  }
+
+  while(nrow(crmat) > 0) {
+
+    m <- rownames(crmat)[1]
+    group <- .recursive_find(c(), m, crmat)
+    groups[[m]] <- group
+
+    crmat <- crmat[ setdiff(rownames(crmat), group), , drop=FALSE]
+  }
+
+  return(groups)
+}
+
+
+

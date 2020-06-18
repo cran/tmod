@@ -4,8 +4,15 @@
 \alias{tmodLimmaDecideTests}
 \title{Up- and down-regulated genes in modules based on limma object}
 \usage{
-tmodLimmaDecideTests(f, genes, lfc.thr = 0.5, pval.thr = 0.05,
-  filter.unknown = FALSE, adjust.method = "BH", mset = "all")
+tmodLimmaDecideTests(
+  f,
+  genes,
+  lfc.thr = 0.5,
+  pval.thr = 0.05,
+  filter.unknown = FALSE,
+  adjust.method = "BH",
+  mset = "all"
+)
 }
 \arguments{
 \item{f}{result of linear model fit produced by limma functions lmFit and eBayes}
@@ -45,6 +52,7 @@ In short, tmodLimmaDecideTests is the equivalent of tmodDecideTests, but
 for limma objects returned by eBayes().
 }
 \examples{
+\dontrun{
 data(Egambia)
 design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
 if(require(limma)) {
@@ -52,6 +60,7 @@ if(require(limma)) {
   ret <- tmodLimmaTest(fit, Egambia$GENE_SYMBOL)
   pie <- tmodLimmaDecideTests(fit, Egambia$GENE_SYMBOL)
   tmodPanelPlot(ret, pie=pie)
+}
 }
 }
 \seealso{

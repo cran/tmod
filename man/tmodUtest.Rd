@@ -10,28 +10,86 @@
 \alias{tmodHGtest}
 \title{Perform a statistical test of module expression}
 \usage{
-tmodUtest(l, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title", useR = FALSE,
-  nodups = TRUE)
+tmodUtest(
+  l,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title",
+  useR = FALSE,
+  nodups = TRUE
+)
 
-tmodGeneSetTest(l, x, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title", Nsim = 1000,
-  nodups = TRUE)
+tmodGeneSetTest(
+  l,
+  x,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title",
+  Nsim = 1000,
+  nodups = TRUE
+)
 
-tmodCERNOtest(l, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title", nodups = TRUE)
+tmodCERNOtest(
+  l,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title",
+  nodups = TRUE
+)
 
-tmodPLAGEtest(l, x, group, modules = NULL, qval = 0.05,
-  order.by = "pval", mset = "LI", cols = "Title", nodups = TRUE)
+tmodPLAGEtest(
+  l,
+  x,
+  group,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  mset = "LI",
+  cols = "Title",
+  nodups = TRUE
+)
 
-tmodZtest(l, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title")
+tmodZtest(
+  l,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title"
+)
 
-tmodWZtest(l, modules = NULL, weights = NULL, qval = 0.05,
-  order.by = "pval", filter = FALSE, mset = "LI", cols = "Title")
+tmodWZtest(
+  l,
+  modules = NULL,
+  weights = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title"
+)
 
-tmodHGtest(fg, bg, modules = NULL, qval = 0.05, order.by = "pval",
-  filter = FALSE, mset = "LI", cols = "Title", nodups = TRUE)
+tmodHGtest(
+  fg,
+  bg,
+  modules = NULL,
+  qval = 0.05,
+  order.by = "pval",
+  filter = FALSE,
+  mset = "LI",
+  cols = "Title",
+  nodups = TRUE
+)
 }
 \arguments{
 \item{l}{sorted list of HGNC gene identifiers}
@@ -44,7 +102,7 @@ tmodHGtest(fg, bg, modules = NULL, qval = 0.05, order.by = "pval",
 
 \item{filter}{Remove gene names which have no module assignments}
 
-\item{mset}{Which module set to use. Either a character vector ("LI", "DC" or "all", default: LI) or a list (see "Custom module definitions" below)}
+\item{mset}{Which module set to use. Either a character vector ("LI", "DC" or "all", default: LI) or an object of class tmod (see "Custom module definitions" below)}
 
 \item{cols}{Which columns from the MODULES data frame should be included in resulsts}
 
@@ -92,7 +150,7 @@ model; for this, use the function eigengene(). See users guide for details.
 
 tmodZtest works very much like tmodCERNOtest, but instead of combining
 the rank-derived p-values using Fisher's method, it uses the Stouffer
-method (known also as the Z-transform test).
+method (known also as the Z-transform test). 
 
 tmodGeneSetTest is an implementation of the function geneSetTest from
 the limma package (note that tmodUtest is equivalent to the limma's
@@ -137,13 +195,14 @@ result <- tmodHGtest( fg, bg )
 ## A more sophisticated example
 ## Gene set enrichment in TB patients compared to 
 ## healthy controls (Egambia data set)
-
+\dontrun{
 data(Egambia)
-  design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
-  if(require(limma)) {
-  fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
-  tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
-  tmodUtest(tt$GENE_SYMBOL)
+library(limma)
+design <- cbind(Intercept=rep(1, 30), TB=rep(c(0,1), each= 15))
+fit <- eBayes( lmFit(Egambia[,-c(1:3)], design))
+tt <- topTable(fit, coef=2, number=Inf, genelist=Egambia[,1:3] )
+tmodUtest(tt$GENE_SYMBOL)
+tmodCERNOtest(tt$GENE_SYMBOL)
 }
 }
 \seealso{
