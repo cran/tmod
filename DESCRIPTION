@@ -2,8 +2,8 @@ Package: tmod
 Type: Package
 Title: Feature Set Enrichment Analysis for Metabolomics and
         Transcriptomics
-Version: 0.44
-Date: 2020-05-22
+Version: 0.46.2
+Date: 2020-10-02
 Author: January Weiner
 Maintainer: January Weiner <january.weiner@gmail.com>
 Description: Methods and feature set definitions for feature or gene set
@@ -13,13 +13,14 @@ Description: Methods and feature set definitions for feature or gene set
 License: GPL (>= 2.0)
 Depends: R (>= 2.10)
 LazyData: false
-VignetteBuilder: knitr,R.rsp
+VignetteBuilder: knitr
 URL: http://bioinfo.mpiib-berlin.mpg.de/tmod/
-Imports: beeswarm,tagcloud,XML,methods,plotwidgets,RColorBrewer,gplots
-Suggests: testthat,knitr,rmarkdown,pca3d,R.rsp
-RoxygenNote: 7.1.0
+Imports:
+        beeswarm,tagcloud,XML,methods,plotwidgets,RColorBrewer,gplots,colorDF
+Suggests: testthat,knitr,rmarkdown,pca3d,R.rsp,dplyr
+RoxygenNote: 7.1.1
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2020-06-18 08:53:39 UTC; january
+Packaged: 2020-10-02 14:20:23 UTC; january
 Repository: CRAN
-Date/Publication: 2020-06-18 10:20:02 UTC
+Date/Publication: 2020-10-02 15:10:02 UTC
