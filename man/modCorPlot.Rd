@@ -7,9 +7,10 @@
 modCorPlot(
   modules,
   mset = NULL,
+  heatmap_func = pheatmap,
   labels = NULL,
   stat = "jaccard",
-  upper.cutoff = 0.1,
+  upper.cutoff = NULL,
   ...
 )
 }
@@ -17,19 +18,25 @@ modCorPlot(
 \item{modules}{either a character vector with module IDs from mset, or a list which
 contains the module members}
 
-\item{mset}{Which module set to use. Either a character vector ("LI", "DC" or "all", default: LI) or an object of class tmod (see "Custom module definitions" below)}
+\item{mset}{Which module set to use. Either a character vector ("LI", "DC" or "all", default: all) or an object of class tmod (see "Custom module definitions" below)}
+
+\item{heatmap_func}{function drawing the heatmap}
 
 \item{labels}{Labels for the modules (if NULL, labels will be retrieved from `mset`)}
 
 \item{stat}{Type of statistics to return. 
-"number": number of common genes (default);
-"jaccard": Jaccard index;
+"jaccard": Jaccard index (default);
+"number": number of common genes;
 "soerensen": Soerensen-Dice coefficient;
 "overlap": Szymkiewicz-Simpson coefficient.}
 
 \item{upper.cutoff}{Specify upper cutoff for the color palette}
 
-\item{...}{Any further parameters are passed to heatmap.2}
+\item{...}{Any further parameters are passed to the heatmap function (by
+default, [pheatmap()].}
+}
+\value{
+Returns the return value of heatmap_func (by default, a pheatmap object).
 }
 \description{
 Plot a correlation heatmap for modules
