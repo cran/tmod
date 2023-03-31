@@ -8,6 +8,41 @@ is.internet <- FALSE
 library(ggplot2)
 theme_set(theme_minimal())
 
+## ----qsg1---------------------------------------------------------------------
+library(tmod)
+data(EgambiaResults)
+tt <- EgambiaResults
+tt <- tt[ order(tt$adj.P.Val), ]
+l  <- tt$GENE_SYMBOL
+
+## ----qsg2---------------------------------------------------------------------
+res <- tmodCERNOtest(l)
+head(res)
+
+## ----qsg3---------------------------------------------------------------------
+ggPanelplot(res)
+
+## ----qsg4,eval=FALSE----------------------------------------------------------
+#  ggEvidencePlot(l, "LI.M37.0", gene.labels=FALSE)
+#  ggEvidencePlot(l, "DC.M4.2")
+#  ggEvidencePlot(l, "DC.M3.4")
+#  ggEvidencePlot(l, "DC.M1.2")
+
+## ----fig.width=10,fig.height=10,echo=FALSE------------------------------------
+library(cowplot)
+g1 <- ggEvidencePlot(l, "LI.M37.0", gene.labels=FALSE) +
+  ggtitle("LI.M37.0")
+g2 <- ggEvidencePlot(l, "DC.M4.2") +
+  ggtitle("DC.M4.2")
+g3 <- ggEvidencePlot(l, "DC.M3.4") +
+  ggtitle("DC.M3.4")
+g4 <- ggEvidencePlot(l, "DC.M1.2") +
+  ggtitle("DC.M1.2")
+plot_grid(g1, g2, g3, g4)
+
+## -----------------------------------------------------------------------------
+getModuleMembers("DC.M1.2")
+
 ## ----twoA,eval=TRUE-----------------------------------------------------------
 library(tmod)
 data(Egambia)
@@ -240,7 +275,7 @@ tmod
 
 ## ----tmodobj2---------------------------------------------
 length(tmod)
-sel <- grep("Interferon", tmod$MODULES$Title, ignore.case=TRUE)
+sel <- grep("Interferon", tmod$gs$Title, ignore.case=TRUE)
 ifn <- tmod[sel]
 ifn
 length(ifn)
